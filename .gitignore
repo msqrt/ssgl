@@ -1,0 +1,9 @@
+Debug
+x64
+.vs
+*.filters
+*.user
+*.bin
+*.pdb
+*.o
+/shader_cache
