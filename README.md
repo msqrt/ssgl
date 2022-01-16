@@ -36,6 +36,10 @@ Below is a screenshot of a more graphics-related example, a simple renderer with
 
 ![](https://i.imgur.com/oYrj8oQ.png)
 
-Since the code is just C++ under the hood, IDE features like Intellisense work properly with shaders. GLSL vector types (including swizzles) and math functions are also available on the CPU side.
+Since the code is C++ under the hood, IDE features like Intellisense work properly with shaders. GLSL vector types (including swizzles) and math functions are also available on the CPU side.
 
-![](https://i.imgur.com/mGHDR90.png)
+![](https://i.imgur.com/QnwMIau.png)
+
+Functions are also supported, though they need to be tagged so that the system knows to include them in the shader.
+
+![](https://i.imgur.com/KDyPcXR.png)
