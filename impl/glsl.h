@@ -1371,7 +1371,7 @@ inline auto smoothstep(const genType& edge0, const genType_& edge1, const genTyp
 }
 template<typename genType, typename genType_, typename = glsl::enable<glsl::broadcastable<genType, genType_>>>
 inline auto step(const genType& edge, const genType_& x) {
-    return glsl::stepper(glsl::Common<genType>(edge), glsl::Common<genType>(x), glsl::Iota<genType>{});
+    return glsl::stepper(glsl::Common<genType, genType_>(edge), glsl::Common<genType, genType_>(x), glsl::Iota<genType, genType_>{});
 }
 
 template<typename genType>
