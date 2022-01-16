@@ -32,6 +32,8 @@ int main() {
 }
 ```
 
+For more details and help on getting started, see the (todo: actual documentation).
+
 Below is a screenshot of a more graphics-related example, a simple renderer with shadow mapping. Note how little supporting code is required to use features like render to texture, and how the IDE recognizes what's going on.
 
 ![](https://i.imgur.com/oYrj8oQ.png)
