@@ -1,0 +1,2 @@
+### single source gl
+single source gl (ssgl) aims to make shader development smoother by letting you write GLSL shaders as lambdas within a host C++ program. This brings shaders right next to the code that calls them and lets you edit them like any C++ code: with intellisense, auto-complete, syntax highlighting, and so on. The approach also makes it possible to automatically set up all shader inputs and outputs such as uniforms and framebuffer targets by simply declaring them using a `bind` macro.
