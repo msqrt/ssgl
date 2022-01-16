@@ -11,7 +11,7 @@ int main() {
     auto generator = [&] {
         layout (local_size_x = 256) in;
         buffer bind_block(iota) {
-            uint result[];
+            dynamic_array(uint, result);
         };
         void glsl_main() {
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
