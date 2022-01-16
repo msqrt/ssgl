@@ -1,5 +1,5 @@
 
-#ifndef NO_WIN32
+#ifdef _WIN32
 #include <Windows.h>
 
 #include "gl_helpers.h"

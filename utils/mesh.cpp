@@ -1,5 +1,4 @@
 
-#define _CRT_SECURE_NO_WARNINGS
 #include <vector>
 #include <fstream>
 #include <charconv>
@@ -174,7 +173,7 @@ void get_mesh(const char* filename, void* meshPtr, bool smooth) {
 	if (!smooth) {
 		FlatMesh* mesh = (FlatMesh*)meshPtr;
 		mesh->triangle_count = int(indices.size()/3);
-#ifndef NO_WIN32
+#ifdef _WIN32
 		mesh->triangles = (FlatMesh::triangle*)_aligned_malloc(mesh->triangle_count * sizeof(FlatMesh::triangle), 16);
 #else											// see how the arguments are flipped? pretty funny joke by whoever defined these :)
 		mesh->triangles = (FlatMesh::triangle*)aligned_alloc(16, mesh->triangle_count * sizeof(FlatMesh::triangle));

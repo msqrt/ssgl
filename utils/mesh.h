@@ -18,7 +18,7 @@ struct FlatMesh {
 		get_mesh(filename, this, false);
 	}
 	~FlatMesh() {
-#ifndef NO_WIN32
+#ifdef _WIN32
 		_aligned_free(triangles);
 #else
 		free(triangles);

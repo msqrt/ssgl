@@ -1,7 +1,7 @@
 
 #include "window.h"
 
-#ifdef NO_WIN32
+#ifndef _WIN32
 #include <signal.h>
 #endif
 
@@ -32,7 +32,7 @@ void APIENTRY glDebugCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 	printf(", id %u:\n%.*s\n", id, length, message);
 	// this is invaluable; you can directly see where any opengl error originated by checking the call stack at this breakpoint
 	if (type == GL_DEBUG_TYPE_ERROR)
-#ifndef NO_WIN32
+#ifdef _WIN32
 		__debugbreak();
 #else
 		raise(SIGTRAP);
@@ -57,7 +57,7 @@ void setupDebug() {
 	glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, 0, GL_FALSE);
 }
 
-#ifndef NO_WIN32
+#ifdef _WIN32
 
 #include "wglext.h"
 

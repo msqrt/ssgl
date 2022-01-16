@@ -1,9 +1,8 @@
 #pragma once
 
-#define _CRT_SECURE_NO_WARNINGS
 #include <vector>
 
-#ifndef NO_WIN32
+#ifdef _WIN32
 #define VC_EXTRALEAN
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -15,7 +14,7 @@
 #include "glsl.h"
 #include "shader_types.h"
 
-#ifdef NO_WIN32
+#ifndef _WIN32
 #include <filesystem>
 #include <atomic>
 #endif
@@ -30,7 +29,7 @@ namespace inline_glsl {
         std::vector<const char*> includes;
         char const* path;
         std::vector<uint> lines;
-#ifndef NO_WIN32
+#ifdef _WIN32
         ULONGLONG currentUpdate = 0;
 #else
         std::filesystem::file_time_type currentUpdate = {};
@@ -109,13 +108,13 @@ namespace inline_glsl {
         const char* cached = nullptr;
         uint nth_in_file, iteration = 0;
         long unique_id;
-#ifndef NO_WIN32
+#ifdef _WIN32
         static long id_counter;
 #else
 		static std::atomic<long> id_counter;
 #endif
         ShaderStore(const char* path, int line, SourceStore& store) : path(path), line(line) {
-#ifndef NO_WIN32
+#ifdef _WIN32
             unique_id = InterlockedAdd(&id_counter, 1);
 #else
             unique_id = id_counter++;
@@ -316,7 +315,7 @@ namespace inline_glsl {
             glGetInternalformativ(type, format, GL_IMAGE_TEXEL_SIZE, 1, &bind_size);
             if (tex_size != bind_size) {
                 printf("warning: texture and shader image have different texel sizes\n");
-#ifndef NO_WIN32
+#ifdef _WIN32
                 __debugbreak();
 #endif
             }

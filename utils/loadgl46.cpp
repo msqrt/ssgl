@@ -1,5 +1,5 @@
 
-#ifndef NO_WIN32
+#ifdef _WIN32
 #include <Windows.h>
 #endif
 
@@ -738,7 +738,7 @@ PFNGLVERTEXATTRIBL1UI64ARBPROC ptr_glVertexAttribL1ui64 = nullptr; void  glVerte
 PFNGLVERTEXATTRIBL1UI64VARBPROC ptr_glVertexAttribL1ui64v = nullptr; void  glVertexAttribL1ui64v(GLuint index, const GLuint64EXT *v) { ptr_glVertexAttribL1ui64v(index, v); }
 PFNGLGETVERTEXATTRIBLUI64VARBPROC ptr_glGetVertexAttribLui64v = nullptr; void  glGetVertexAttribLui64v(GLuint index, GLenum pname, GLuint64EXT *params) { ptr_glGetVertexAttribLui64v(index, pname, params); }
 
-#ifdef NO_WIN32
+#ifndef _WIN32
 #define wglGetProcAddress eglGetProcAddress
 #include <stdio.h>
 #include <EGL/egl.h>

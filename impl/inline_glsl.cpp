@@ -1,13 +1,13 @@
 
 #include "inline_glsl.h"
-#ifndef NO_WIN32
+#ifdef _WIN32
 #include <direct.h>
 #endif
 
 ivec2 windowSize();
 
 namespace inline_glsl {
-#ifndef NO_WIN32
+#ifdef _WIN32
     long ShaderStore::id_counter = 1; // 0 reserved for non-existing shaders
     inline ULONGLONG lastAccess(const char* path) {
         HANDLE file = CreateFileA(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -425,7 +425,7 @@ namespace inline_glsl {
             //for (int i = 0; i < 4 + extensions + 2 * store.glsl_functions.size(); ++i)
             //    printf("%s", sources[i]);
 
-#ifndef NO_WIN32
+#ifdef _WIN32
             (void)_mkdir("shader_cache");
 #else
             std::filesystem::create_directory("shader_cache");
