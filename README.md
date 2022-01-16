@@ -33,7 +33,9 @@ int main() {
 ```
 
 Below is a screenshot of a more graphics-related example, a simple renderer with shadow mapping. Note how little supporting code is required to use features like render to texture, and how the IDE recognizes what's going on.
+
 ![](https://i.imgur.com/oYrj8oQ.png)
 
 Since the code is just C++ under the hood, IDE features like Intellisense work properly with shaders. GLSL vector types (including swizzles) and math functions are also available on the CPU side.
+
 ![](https://i.imgur.com/mGHDR90.png)
