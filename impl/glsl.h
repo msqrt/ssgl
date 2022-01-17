@@ -889,8 +889,8 @@ using dmat2 = dmat2x2;
 using dmat3 = dmat3x3;
 using dmat4 = dmat4x4;
 
-#include <math.h>
-#include <string.h>
+#include <cmath>
+#include <cstring>
 
 namespace glsl {
 
