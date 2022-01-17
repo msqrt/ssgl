@@ -153,7 +153,6 @@ Attribute(const Buffer& b, int stride, int offset = 0, GLuint type = -1, bool no
 ```
 glsl_extension(name, behavior)
 glsl_version(version)
-glsl_subgroup(behavior)
 ```
 
-These macros are used inside a shader to specify the required extensions and the GLSL version to compile against. The default is no extensions and GLSL 4.60. The `glsl_subgroup` macro is a shorthand that applies the same behavior for all `GL_KHR_shader_subgroup_*` extensions.
+These macros are used inside a shader to specify the required extensions and the GLSL version to compile against. The default is no extensions and GLSL 4.60.
