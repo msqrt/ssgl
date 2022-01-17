@@ -2,7 +2,7 @@
 
 single source gl (ssgl) lets you write GLSL shaders as C++ lambdas that automatically capture shader inputs/outputs.
 
-To illustrate, the following example is a complete program that defines a compute shader and uses it to fill a buffer like `std::iota` would on the CPU side. The shader here is everything inside the lambda `generator`, and the main body of the shader is inside `glsl_main`. `useShader` automatically sets up the program and binds the SSBO.
+To illustrate, the following example is a complete program that defines a compute shader and uses it to fill a buffer like `std::iota` would on the CPU side. The shader here is everything inside the `generator` lambda, and the main body of the shader is inside `glsl_main`. `useShader` automatically sets up the program and binds the SSBO.
 ```C++
 #include <vector>
 #include "ssgl.h"
