@@ -8,7 +8,7 @@ To illustrate, the following example is a complete program that defines a comput
 #include "ssgl.h"
 
 int main() {
-    OpenGL context(640, 480, "Simple", false, false);
+    OpenGL context(640, 480, "iota_example", false, false);
     
     Buffer iota;
     glNamedBufferData(iota, 1024 * 1024 * sizeof(uint32_t), nullptr, GL_STATIC_DRAW);
