@@ -3,44 +3,58 @@
 #include "gl_timing.h"
 
 int main() {
+    // init OpenGL, create window
     OpenGL context(1280, 720, "Triangle");
 
-    struct Vertex { vec3 position, color; };
+    // define some vertices as a CPU array
+    struct Vertex { vec2 position; vec3 color; };
     Vertex verts[] = {
-        {vec3(.5f, .0f, .0f), vec3(1.f, .0f, .0f)},
-        {vec3(-.5f, .5f, .0f), vec3(.0f, 1.f, .0f)},
-        {vec3(-.5f,-.5f, .0f), vec3(.0f, .0f, 1.f)}
+        {vec2(.5f, .0f), vec3(1.f, .0f, .0f)},
+        {vec2(-.4f, .5f), vec3(.0f, 1.f, .0f)},
+        {vec2(-.4f,-.5f), vec3(.0f, .0f, 1.f)}
     };
 
+    // send the vertices to the GPU
     Buffer b; glNamedBufferData(b, sizeof(Vertex) * 3, verts, GL_STATIC_DRAW);
-    Attribute<vec3> position(b, sizeof(Vertex), 0), color(b, sizeof(Vertex), sizeof(vec3));
+    // set up attributes corresponding to the values
+    Attribute<vec2> position(b, sizeof(Vertex), 0);
+    Attribute<vec3> color(b, sizeof(Vertex), sizeof(vec2));
 
+    // start timing
     TimeStamp start;
+
+    // while window open and ESC not pressed
     while (loop()) {
+        // get time elapsed
         TimeStamp now;
         float t = .001f*(float)cpuTime(start, now);
 
-        auto vert = [&] {
-            out vec3 col;
+        // define the shaders
+        auto vertex = [&] {
             uniform float bind(t);
-            in vec3 bind_attribute(position, color);
+            in vec2 bind_attribute(position);
+            in vec3 bind_attribute(color);
+            out vec3 col;
             void glsl_main() {
                 col = color;
-                float c = cos(t), s = sin(t);
-                gl_Position = vec4(mat2(c,s,-s,c)*position.xy*vec2(9.f/16.f,1.f), position.z, 1.f);
+                float angle = t * .5f;
+                float c = cos(angle), s = sin(angle);
+                gl_Position = vec4(mat2(c,s,-s,c)*position.xy*vec2(9.f/16.f,1.f), .0f, 1.f);
             }
         };
-        auto frag = [] {
+        auto fragment = [] {
             in vec3 col;
-            out vec3 screen;
+            out vec3 screen; // no bind, this just draws to the default framebuffer
             void glsl_main() {
                 screen = col;
             }
         };
 
-        useShader(vert(), frag());
+        // set up the shader and draw
+        useShader(vertex(), fragment());
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
+        // show the frame and clear the screen
         swapBuffers();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
