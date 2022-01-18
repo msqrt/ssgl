@@ -59,6 +59,8 @@ Let's look at a few usage examples in more detail. This is not a tutorial on C++
 
 ### simple compute shader
 
+![](https://user-images.githubusercontent.com/1880715/150009227-71b83b32-0033-4e7b-aa08-79465e41e135.png)
+
 We'll first go through the simple compute shader already shown above.
 
 ```C++
