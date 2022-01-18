@@ -8,11 +8,14 @@ To illustrate, the following is a program that uses a compute shader to fill a b
 #include "ssgl.h"
 
 int main() {
+    // init OpenGL
     OpenGL context(640, 480, "iota_example", false, false);
     
+    // reserve space
     Buffer iota;
     glNamedBufferData(iota, 1024 * 1024 * sizeof(uint32_t), nullptr, GL_STATIC_DRAW);
-
+    
+    // the shader itself
     auto fill = [&] {
         layout (local_size_x = 256) in;
         buffer bind_block(iota) {
@@ -22,10 +25,12 @@ int main() {
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
         }
     };
-
+    
+    // call the shader
     useShader(fill());
     glDispatchCompute(1024*4, 1, 1);
-
+    
+    // display results
     std::vector<uint32_t> result(1024 * 1024);
     glGetNamedBufferSubData(iota, 0, sizeof(uint32_t) * result.size(), result.data());
     for (int i = 0; i<1024*1024; i+=64*1024)
