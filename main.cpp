@@ -2,6 +2,11 @@
 #include "ssgl.h"
 #include "gl_timing.h"
 
+glsl_function mat2 get_rotation(float angle) {
+    float c = cos(angle), s = sin(angle);
+    return mat2(c, s, -s, c);
+}
+
 int main() {
     // init OpenGL, create window
     OpenGL context(1280, 720, "Triangle");
@@ -37,9 +42,7 @@ int main() {
             out vec3 col;
             void glsl_main() {
                 col = color;
-                float angle = t * .5f;
-                float c = cos(angle), s = sin(angle);
-                gl_Position = vec4(mat2(c,s,-s,c)*position.xy*vec2(9.f/16.f,1.f), .0f, 1.f);
+                gl_Position = vec4(get_rotation(t)*position.xy*vec2(9.f/16.f,1.f), .0f, 1.f);
             }
         };
         auto fragment = [] {

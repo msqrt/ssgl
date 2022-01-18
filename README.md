@@ -125,6 +125,12 @@ This one is a classic OpenGL example. We'll use it to illustrate how vertex attr
 #include "ssgl.h"
 #include "gl_timing.h"
 
+// get a 2D rotation matrix based on an angle (in radians)
+glsl_function mat2 get_rotation(float angle) {
+    float c = cos(angle), s = sin(angle);
+    return mat2(c, s, -s, c);
+}
+
 int main() {
     // init OpenGL, create window
     OpenGL context(1280, 720, "Triangle");
@@ -160,9 +166,7 @@ int main() {
             out vec3 col;
             void glsl_main() {
                 col = color;
-                float angle = t * .5f;
-                float c = cos(angle), s = sin(angle);
-                gl_Position = vec4(mat2(c,s,-s,c)*position.xy*vec2(9.f/16.f,1.f), .0f, 1.f);
+                gl_Position = vec4(get_rotation(t)*position.xy*vec2(9.f/16.f,1.f), .0f, 1.f);
             }
         };
         auto fragment = [] {
@@ -184,6 +188,20 @@ int main() {
     return 0;
 }
 ```
+
+Here the first thing to note is the function `get_rotation`, which constructs a basic rotation matrix from an angle. It's defined with the qualifier `glsl_function` which adds it to all shaders in the C++ file. Note that you can also call it from C++, as `glsl_function` does nothing on the C++ side. Includes are also followed by the shader parser, so you can define `glsl_function`s in a header file. In headers it might be useful to do `inline glsl_function`; the parser ignores anything before `glsl_function` so you can add any C++ qualifier in there.
+
+The next new thing is `Attribute`, which defines a vertex attribute view into a buffer. The type defines how the attribute will look in the shader, and the arguments of the constructor (which are `(Buffer buffer, int stride, int offset, int type, bool normalized)`) set up how the attribute will be read from the buffer, just as you would with `glVertexAttribPointer`. Here, `buffer` is the vertex buffer we stored our vertex data in, `stride` is the size of the `Vertex` struct, `offset` is 0 for the first attribute and `sizeof(vec2)` for the second, as that's how many bytes we have to skip to land in the beginning of the first color value. `type` is deduced from the element type of the template argument (for example `float` for `vec2` and `uint` for ´uvec4´); if your data is, say, `int16_t`, you'll have to give `GL_SHORT` in the constructor. `normalized` dictates how non-float input data is mapped to a float type in a shader. So `Attribute<vec3>(b, 2, 0, GL_SHORT, true)` would give attribute values between -1.0 and 1.0, but with `normalize=false` the range would be 0.0 to 65536.0. This is exactly how `glVertexAttribPointer` works, `Attribute` is just a thin wrapper around it.
+
+`TimeStamp` is a helper from `utils/gl_timing.h`. It lets you place timing events in code and measure elapsed cpu and gpu times between them; it's mainly useful for performance tuning, and has some overhead so should not be left in the final program. Here it's used just to show it off in context.
+
+There's relatively little special going on in the shaders. Uniform values are bound simply with `bind()`, and attributes with `bind_attribute()`. Try binding an `Attribute` with a mismatched type in the `in` statement (for example, `in vec3 bind_attribute(position)`); you'll get a compile time error.
+
+An `out` parameter from the framgent shader could be bound to render to a texture with `bind_target()`; this is not necessary here, as we're writing to the screen. Incidentally, there's a special global texture with the name `screen` that you can pass in when you write a generic shader that needs to be able to write either to the screen or a texture. So you could use it here; try replacing `screen` with `bind_target(screen)`. Similarly, there's a `bind_depth()` macro you can use to declare a depth target, and a special variable `screen_depth` for the default depth target.
+
+Then we do a drawcall, again giving the `Shader` objects returned by the shader lambdas to `useShader`. `swapBuffers` presents the image on the screen.
+
+Note that shaders are hot reloadable! This is always active, and the reloading is done by simply saving the file. Try running the program, and while it's running, change `get_rotation(t)` to `get_rotation(-t)` and save `main.cpp`. The triangle should jump a bit and start rotating in the other direction.
 
 
 ## screenshots

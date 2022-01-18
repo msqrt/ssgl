@@ -537,3 +537,4 @@ static void useShader(const Shader& vertex, const Shader& geometry, const Shader
 }
 
 inline const Texture<> screen = {};
+inline const Texture<> screen_depth = {};
