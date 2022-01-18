@@ -1,8 +1,8 @@
 # single source gl
 
-single source gl (ssgl) lets you write GLSL shaders as C++ lambdas that automatically capture shader inputs/outputs.
+single source gl (ssgl) lets you write GLSL shaders as C++ lambdas that automatically capture shader inputs and outputs. This unifies code, brings powerful C++ tools into shader development, and removes code that just passes objects around.
 
-To illustrate, the following example is a complete program that defines a compute shader and uses it to fill a buffer like `std::iota` would on the CPU side. The shader here is everything inside the `generator` lambda, and the main body of the shader is inside `glsl_main`. `useShader` automatically sets up the program and binds the SSBO.
+To illustrate, the following is a program that uses a compute shader to fill a buffer with a running count. The shader is the lambda `fill`, and the main body of the shader is in `glsl_main`. `useShader` sets up the program and binds the buffer.
 ```C++
 #include <vector>
 #include "ssgl.h"
@@ -13,17 +13,17 @@ int main() {
     Buffer iota;
     glNamedBufferData(iota, 1024 * 1024 * sizeof(uint32_t), nullptr, GL_STATIC_DRAW);
 
-    auto generator = [&] {
+    auto fill = [&] {
         layout (local_size_x = 256) in;
         buffer bind_block(iota) {
-            dynamic_array(uint, result);
+            dynamic_array(uint, result); // equivalent to uint result[];
         };
         void glsl_main() {
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
         }
     };
 
-    useShader(generator());
+    useShader(fill());
     glDispatchCompute(1024*4, 1, 1);
 
     std::vector<uint32_t> result(1024 * 1024);
@@ -33,9 +33,18 @@ int main() {
 }
 ```
 
-The project aims to make shader development smoother with this injection of GLSL into C++. Shaders are brought right next to the code that calls them, and you can edit them like any C++ code: with intellisense, auto-complete, syntax highlighting, and so on. On top of that, the shaders are hot reloadable to enable interactive editing. The approach also makes it possible to automatically set up all shader inputs and outputs such as uniforms and framebuffer targets by simply declaring them using a `bind` macro, significantly shortening the host code per drawcall. In addition, the GLSL vector and matrix types are available in the host side and functions outside the shader body are supported, so you can write code once and call it both on the CPU and the GPU. The library doesn't rely on any custom extensions. Instead, it works on the language level, and thus works on all major compilers (tested on MSVC, GCC, and clang) and with any editor or IDE.
+The project aims to make shader development smoother with this injection of GLSL into C++. There are several factors that go into this:
+* shaders are brought right next to the code that calls them
+* shaders can be edited like any C++ code: with intellisense, auto-complete, syntax highlighting, and so on
+* shaders are hot reloadable so interactive editing is possible
+* shader inputs and outputs such as uniforms and framebuffer targets are automatically captured, removing a bunch of supporting code
+* the GLSL vector and matrix types are available on the host side
+* free functions can be called from shader code; you can implement functions once and call them both on the CPU and the GPU
+* no custom extensions are required, thus all major compilers are supported (tested on MSVC, GCC, and clang)
 
 To be clear, the project is **not** about adding C++ features to shaders, or being able to run shaders on the CPU (even though the latter is possible to an extent). All of the shader code will be standard GLSL and run on the GPU. The point is that GLSL now sits within C++, improving the development experience by making shaders nicer to write and reducing the need for uninteresting code.
+
+The project is written against C++17 and OpenGL 4.6. The C++17 features are strictly necessary, but OpenGL could be ported back at least to 3.0 -- the main hurdle would be to convert all DSA code to the old model.
 
 ## examples
 
