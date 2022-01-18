@@ -121,7 +121,7 @@ A small but important thing to note is that `ssgl.h` should always be included a
 
 This one is a classic OpenGL example. We'll use it to illustrate how vertex attributes and uniforms work.
 
-```
+```C++
 #include "ssgl.h"
 #include "gl_timing.h"
 
