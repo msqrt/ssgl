@@ -119,7 +119,7 @@ A small but important thing to note is that `ssgl.h` should always be included a
 
 ### rotating rgb triangle
 
-![![image](https://user-images.githubusercontent.com/1880715/150008489-79662388-f997-4f29-b10a-48279413fc9b.png)]()
+![](https://user-images.githubusercontent.com/1880715/150008489-79662388-f997-4f29-b10a-48279413fc9b.png)
 
 This one is a classic OpenGL example. We'll use it to illustrate how vertex attributes and uniforms work.
 
