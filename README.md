@@ -195,7 +195,9 @@ The next new thing is `Attribute`, which defines a vertex attribute view into a 
 
 `TimeStamp` is a helper from `utils/gl_timing.h`. It lets you place timing events in code and measure elapsed cpu and gpu times between them; it's mainly useful for performance tuning, and has some overhead so should not be left in the final program. Here it's used just to show it off in context.
 
-There's relatively little special going on in the shaders. Uniform values are bound simply with `bind()`, and attributes with `bind_attribute()`. Try binding an `Attribute` with a mismatched type in the `in` statement (for example, `in vec3 bind_attribute(position)`); you'll get a compile time error.
+Uniform values are bound simply with `bind()`, and attributes with `bind_attribute()`. Try binding an `Attribute` with a mismatched type in the `in` statement (for example, `in vec3 bind_attribute(position)`); you'll get a compile time error.
+
+Beyond the binds, there's relatively little special going on in the shaders. Notice how we use the `f` postfixes for floats; these get removed by the parser so no GLSL compiler gets confused. It's not strictly necessary but good practice to use the `f`s, since it keeps the C++ compiler from emitting loads of warnings about conversions between `float` and `double`.
 
 An `out` parameter from the framgent shader could be bound to render to a texture with `bind_target()`; this is not necessary here, as we're writing to the screen. Incidentally, there's a special global texture with the name `screen` that you can pass in when you write a generic shader that needs to be able to write either to the screen or a texture. So you could use it here; try replacing `screen` with `bind_target(screen)`. Similarly, there's a `bind_depth()` macro you can use to declare a depth target, and a special variable `screen_depth` for the default depth target.
 
