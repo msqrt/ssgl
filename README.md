@@ -19,7 +19,7 @@ int main() {
     auto fill = [&] {
         layout (local_size_x = 256) in;
         buffer bind_block(iota) {
-            dynamic_array(uint, result); // equivalent to uint result[];
+            dynamic_array(uint, result); // replacement for "uint result[];"
         };
         void glsl_main() {
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
@@ -55,14 +55,18 @@ The implementation is split into two folders: `impl` contains everything you nee
 
 ## examples
 
-Let's look at a few usage examples in more detail. We'll first go through the one given earlier, a simple compute shader.
+Let's look at a few usage examples in more detail. This is not a tutorial on C++, GPU programming, or graphics, so a certain level of proficiency in each is expected. The interest is not in what we compute, but how we do it. Focusing on form over function here will let you do the opposite in your actual projects.
+
+### simple compute shader
+
+We'll first go through the simple compute shader already shown above.
 
 ```C++
 #include <vector>
 #include "ssgl.h"
 
 int main() {
-    // init OpenGL
+    // init OpenGL, create window
     OpenGL context(640, 480, "iota_example", false, false);
     
     // reserve space
@@ -73,7 +77,7 @@ int main() {
     auto fill = [&] {
         layout (local_size_x = 256) in;
         buffer bind_block(iota) {
-            dynamic_array(uint, result); // equivalent to uint result[];
+            dynamic_array(uint, result); // replacement for "uint result[];"
         };
         void glsl_main() {
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
@@ -108,7 +112,79 @@ As already mentioned, `glsl_main` is just the name we use for the `main` functio
 
 `useShader` takes in all of the desired shaders, compiles them into a program and sets it as the current program. If you wish to edit any properties of the shader manually, you can do so between `useShader()` and your draw call. Notice that the argument of `useShader()` is **not** the lambda, but the `Shader` object returned by the lambda: we write `useShader(fill())`, not `useShader(fill)`. You could in principle get the `Shader` object first and pass that into `useShader`, but doing so has little benefit and doing certain operations between the two is not permitted, so calling the lambdas in the `useShader` argument list is the safest route.
 
-The rest of the program is very standard; we dispatch a compute operation with the shader, read some results back, and print a subset to see that something actually happened.
+The rest of the program is very standard; we dispatch a compute operation with the shader, read some results back, and print some of the values to see that something actually happened.
+
+A small but important thing to note is that `ssgl.h` should always be included after any other headers. It defines some relatively common words (`in`, `out`, `buffer`, ...) as macros (since those are used by GLSL), and can mess up the way other headers work.
+
+
+### rotating rgb triangle
+
+This one is a classic OpenGL example. We'll use it to illustrate how vertex attributes and uniforms work.
+
+```
+#include "ssgl.h"
+#include "gl_timing.h"
+
+int main() {
+    // init OpenGL, create window
+    OpenGL context(1280, 720, "Triangle");
+
+    // define some vertices as a CPU array
+    struct Vertex { vec2 position; vec3 color; };
+    Vertex verts[] = {
+        {vec2(.5f, .0f), vec3(1.f, .0f, .0f)},
+        {vec2(-.4f, .5f), vec3(.0f, 1.f, .0f)},
+        {vec2(-.4f,-.5f), vec3(.0f, .0f, 1.f)}
+    };
+
+    // send the vertices to the GPU
+    Buffer b; glNamedBufferData(b, sizeof(Vertex) * 3, verts, GL_STATIC_DRAW);
+    // set up attributes corresponding to the values
+    Attribute<vec2> position(b, sizeof(Vertex), 0);
+    Attribute<vec3> color(b, sizeof(Vertex), sizeof(vec2));
+
+    // start timing
+    TimeStamp start;
+
+    // while window open and ESC not pressed
+    while (loop()) {
+        // get time elapsed
+        TimeStamp now;
+        float t = .001f*(float)cpuTime(start, now);
+
+        // define the shaders
+        auto vertex = [&] {
+            uniform float bind(t);
+            in vec2 bind_attribute(position);
+            in vec3 bind_attribute(color);
+            out vec3 col;
+            void glsl_main() {
+                col = color;
+                float angle = t * .5f;
+                float c = cos(angle), s = sin(angle);
+                gl_Position = vec4(mat2(c,s,-s,c)*position.xy*vec2(9.f/16.f,1.f), .0f, 1.f);
+            }
+        };
+        auto fragment = [] {
+            in vec3 col;
+            out vec3 screen; // no bind, this just draws to the default framebuffer
+            void glsl_main() {
+                screen = col;
+            }
+        };
+
+        // set up the shader and draw
+        useShader(vertex(), fragment());
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        // show the frame and clear the screen
+        swapBuffers();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+    return 0;
+}
+```
+
 
 ## screenshots
 
