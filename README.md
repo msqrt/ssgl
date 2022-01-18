@@ -51,9 +51,70 @@ To be clear, the project is **not** about adding C++ features to shaders, or bei
 
 The project is written against C++17 and OpenGL 4.6. The C++17 features are strictly necessary, but OpenGL could be ported back at least to 3.0 -- the main hurdle would be to convert all DSA code to the old model.
 
+The implementation is split into two folders: `impl` contains everything you need for the library to work, and that's all you need if you want to use your own windowing/OpenGL environment. `utils` contains some extra helpers and a sample windowing/GL extension loading system to keep the repository self-contained. On Linux, this windowing system requires GLFW 3.
+
 ## examples
 
-Below is a screenshot of working on a simple renderer with shadow mapping. Note how little supporting code is required to use features like render to texture, and how the IDE (here, Visual Studio) recognizes what's going on.
+Let's look at a few usage examples in more detail. We'll first go through the one given earlier, a simple compute shader.
+
+```C++
+#include <vector>
+#include "ssgl.h"
+
+int main() {
+    // init OpenGL
+    OpenGL context(640, 480, "iota_example", false, false);
+    
+    // reserve space
+    Buffer iota;
+    glNamedBufferData(iota, 1024 * 1024 * sizeof(uint32_t), nullptr, GL_STATIC_DRAW);
+    
+    // the shader itself
+    auto fill = [&] {
+        layout (local_size_x = 256) in;
+        buffer bind_block(iota) {
+            dynamic_array(uint, result); // equivalent to uint result[];
+        };
+        void glsl_main() {
+            result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
+        }
+    };
+    
+    // call the shader
+    useShader(fill());
+    glDispatchCompute(1024*4, 1, 1);
+    
+    // display results
+    std::vector<uint32_t> result(1024 * 1024);
+    glGetNamedBufferSubData(iota, 0, sizeof(uint32_t) * result.size(), result.data());
+    for (int i = 0; i<1024*1024; i+=64*1024)
+        printf("%u\n", result[i]);
+}
+```
+
+To set the scene, we first create two objects, of types `OpenGL` and `Buffer`. These are context objects that make life easier; `OpenGL` corresponds to an OpenGL context and a window, and `Buffer` to an OpenGL buffer object. The types are prepared such that we'll have access to the desired object while the objects are in scope, after which they're automatically discarded. C++ destroys objects in the first-in-last-out order, so `iota` will be released before `context`. This is great, as trying to release an OpenGL object after OpenGL itself would be a potential disaster.
+
+Note that we can pass `iota` directly to any OpenGL function, such as `glNamedBufferData` and `glGetNamedBufferSubData` here, since `Buffer` is implicitly castable to `GLuint`. This is similar to calling `.get()` on a `std::unique_ptr`, but there's no real potential for confusion here so the cast is made implicit.
+
+Then we get to the shader itself. Here, this is the lambda stored to `fill`. We want to capture everything by reference to avoid copying things. The full shader code is written inside the lambda, including the setup and declarations before `main`, which is renamed to `glsl_main` (to avoid confusion, as most C++ programs also contain a `main`).
+
+The `layout (local_size_x = 256) in;` line is standard GLSL, it sets the local group size for compute shaders; there are three axes (`local_size_x`, `local_size_y`, `local_size_z`). Axes that are not set default to a size of 1.
+
+The `buffer` definition is slightly non-standard; namely, the name of the buffer (`iota`) is wrapped in the `bind_block()` macro. This is the part that lets ssgl generate code that automatically binds the SSBO. We'll later see other variants of the `bind` macro; `bind_block` is used for SSBOs and UBOs, since their declarations are followed by a struct-like block that defines the contents.
+
+The `dynamic_array(uint, result);` is a straight-up macro that maps to `uint result[];`. This is for two reasons: flexible arrays as union members are not legit C++ and thus not permitted by all compilers, and a flexible array doesn't have the `.length()` member that dynamic arrays in GLSL have. Using the `dynamic_array` macro bypasses both of these issues; the code compiles everywhere, and we can use `result.length()` to determine the length of the array.
+
+As already mentioned, `glsl_main` is just the name we use for the `main` function of a GLSL shader to avoid name clashes with the C++ `main`. This statement is the only necessary one, it makes the lambda actually produce a `Shader` object when called.
+
+`useShader` takes in all of the desired shaders, compiles them into a program and sets it as the current program. If you wish to edit any properties of the shader manually, you can do so between `useShader()` and your draw call. Notice that the argument of `useShader()` is **not** the lambda, but the `Shader` object returned by the lambda: we write `useShader(fill())`, not `useShader(fill)`. You could in principle get the `Shader` object first and pass that into `useShader`, but doing so has little benefit and doing certain operations between the two is not permitted, so calling the lambdas in the `useShader` argument list is the safest route.
+
+The rest of the program is very standard; we dispatch a compute operation with the shader, read some results back, and print a subset to see that something actually happened.
+
+## screenshots
+
+Here are a few screenshots of how development can look. These were produced with Visual Studio 2019.
+
+Here we see a development session working on a simple renderer with shadow mapping. Note how little supporting code is required to use features like render to texture, and how the IDE (here, Visual Studio) recognizes what's going on.
 
 ![](https://i.imgur.com/oYrj8oQ.png)
 
@@ -142,6 +203,12 @@ These macros are used to wrap `out` and `inout` argument types for `glsl_functio
 ### wrapper types
 
 ```
+struct OpenGL;
+Opengl(width, height, title, fullscreen, show);
+```
+`OpenGL` is a RAII wrapper for an OpenGL context; constructing the object opens a context and makes it current, and . The constructor takes the parameters of the window: its size and title, if it's fullscreen, and if it should be shown at all. The last option is to support CLI programs where you don't want a window at all.
+
+```
 struct Buffer;
 template<GLenum target> struct Texture;
 ```
@@ -167,6 +234,34 @@ Attribute(const Buffer& b, int stride, int offset = 0, GLuint type = -1, bool no
 `Attribute` is an adapter for vertex buffers: it's where you define how the buffer is read to produce vertex inputs. The template argument `T` is the shader-side type of the attribute. The only things you can do with `Attribute` instances are construct them and bind them to shaders. In the constructor you specify the buffer to be read, and all of the information typically given to `glVertexAttribPointer`. The type of the attribute is typically determined by the template argument, but for example a vec3 attribute can be backed up by `GL_BYTE` data, so you can also give the type manually.
 
 ### misc
+
+```
+void useShader(const Shader& compute);
+void useShader(const Shader& vertex, const Shader& fragment);
+void useShader(const Shader& vertex, const Shader& geometry, const Shader& fragment);
+void useShader(const Shader& vertex, const Shader& control, const Shader& evaluation, const Shader& fragment);
+void useShader(const Shader& vertex, const Shader& geometry, const Shader& control, const Shader& evaluation, const Shader& fragment);
+```
+`useShader` basically replaces `glUseProgram()` and most of the binding code. You give it the shaders corresponding to the shader stages you require. The OpenGL side shader programs themselves are cached, so compilation only happens on the first call to that specific combination of shaders.
+
+```
+bool loop();
+void swapBuffers();
+void setTitle(const char* title);
+void showWindow();
+void hideWindow();
+
+bool keyDown(uint vk_code);
+bool keyHit(uint vk_code);
+void resetHits();
+
+ivec2 getMouse();
+void setMouse(ivec2);
+
+ivec2 windowSize();
+```
+These functions manage the window. Calling them might do something weird if there's no OpenGL context active. Going in order, `loop()` handles window messages and returns false if the program should quit (so your default main loop should be `while(loop())`). `swapBuffers()` presents the rendered frame from the default framebuffer on the screen. `setTitle()` changes the window title. `showWindow()` and `hideWindow()` make the window appear and disappear. `keyDown()` returns if the given key is currently held down, and `keyHit()` if it's been pressed down during this frame. `resetHits()` (automatically called by `loop()`) resets key hit status. `getMouse()` gets screen-relative mouse location in pixels (origin is top left of the window, x is to the right and y is down). `setMouse()` warps the pointer to the desired pixel (coordinates match `getMouse()`). `windowSize()` gets the current window resolution.
+
 ```
 glsl_extension(name, behavior)
 glsl_version(version)
