@@ -45,7 +45,7 @@ int main() {
                 gl_Position = vec4(get_rotation(t)*position.xy*vec2(9.f/16.f,1.f), .0f, 1.f);
             }
         };
-        auto fragment = [] {
+        auto fragment = [&] {
             in vec3 col;
             out vec3 screen; // no bind, this just draws to the default framebuffer
             void glsl_main() {

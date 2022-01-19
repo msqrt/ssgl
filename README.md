@@ -206,7 +206,7 @@ int main() {
                 gl_Position = vec4(pos*vec2(9.f/16.f,1.f), .0f, 1.f);
             }
         };
-        auto fragment = [] {
+        auto fragment = [&] {
             in vec3 col;
             // screen is a special texture output that writes to the window sufrace.
             out vec3 bind_target(screen);
