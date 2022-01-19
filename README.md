@@ -139,10 +139,13 @@ This one is a classic OpenGL example. We'll use it to illustrate how vertex attr
 
 ```C++
 #include "ssgl.h"
+// the headers in this repo are built to respect ssgl.h, so order doesn't matter
 #include "gl_timing.h"
 
-// get a 2D rotation matrix based on an angle (in radians)
-glsl_function mat2 get_rotation(float angle) {
+// we use the keyword "glsl_function" to define global functions with GLSL support.
+// necessary C++ keywords and specifiers can be placed before "glsl_function"
+inline glsl_function mat2 get_rotation(float angle) {
+    // get a 2D rotation matrix based on an angle (in radians)
     float c = cos(angle), s = sin(angle);
     return mat2(c, s, -s, c);
 }
@@ -151,7 +154,7 @@ int main() {
     // init OpenGL, create window
     OpenGL context(1280, 720, "Triangle");
 
-    // define some vertices as a CPU array
+    // define some vertices as a CPU-side array
     struct Vertex { vec2 position; vec3 color; };
     Vertex verts[] = {
         {vec2(.5f, .0f), vec3(1.f, .0f, .0f)},
@@ -159,36 +162,56 @@ int main() {
         {vec2(-.4f,-.5f), vec3(.0f, .0f, 1.f)}
     };
 
-    // send the vertices to the GPU
+    // send the vertices array to the GPU
     Buffer b; glNamedBufferData(b, sizeof(Vertex) * 3, verts, GL_STATIC_DRAW);
-    // set up attributes corresponding to the values
+
+    // set up attributes corresponding to the values. these are wrapper objects that act
+    // as a view to the given Buffer; the arguments mostly match those of glVertexAttribPointer:
+    // (buffer, stride, offset=0, type=-1, normalized=false), where typically stride is the size
+    // of the vertex and offset is how many bytes into the struct the corresponding field is.
+    // the template argument of Attribute is the desired shader-side type; if this doesn't match
+    // the data in the buffer (say, your data is uint8_t), you can manually override the type.
     Attribute<vec2> position(b, sizeof(Vertex), 0);
     Attribute<vec3> color(b, sizeof(Vertex), sizeof(vec2));
 
-    // start timing
+    // stores both CPU- and GPU-side timing events (has some overhead, but OK for prototyping)
     TimeStamp start;
 
-    // while window open and ESC not pressed
+    // loop() is true while the window is open and ESC has not been pressed
     while (loop()) {
-        // get time elapsed
         TimeStamp now;
+        // cpuTime() gets time in milliseconds between two stamps
+        // gpuTime() would get total render operation time between the stamps
         float t = .001f*(float)cpuTime(start, now);
 
         // define the shaders
         auto vertex = [&] {
+            // uniforms are bound with bind(name), this means basic types (including vec* and mat*)
+            // and textures/images which are bound as uniforms
             uniform float bind(t);
-            in vec2 bind_attribute(position);
+            // attributes are bound with bind_attribute; note that you don't bind the buffer directly!
+            in vec2 bind_attribute(position); // these do type checking; try changing the type to float
             in vec3 bind_attribute(color);
             out vec3 col;
             void glsl_main() {
                 col = color;
-                gl_Position = vec4(get_rotation(t)*position.xy*vec2(9.f/16.f,1.f), .0f, 1.f);
+                
+                // shaders are hot reloadable! try changing "t" to "0.5f*t" or "-t" and saving the file
+                float angle = t;
+
+                // here we call get_rotation() defined in the beginning
+                vec2 pos = get_rotation(angle)*position.xy;
+                
+                // GLSL's built-in variables are pre-defined
+                gl_Position = vec4(pos*vec2(9.f/16.f,1.f), .0f, 1.f);
             }
         };
         auto fragment = [] {
             in vec3 col;
-            out vec3 screen; // no bind, this just draws to the default framebuffer
+            // screen is a special texture output that writes to the window sufrace.
+            out vec3 bind_target(screen);
             void glsl_main() {
+                // just output the interpolated value
                 screen = col;
             }
         };
@@ -197,30 +220,15 @@ int main() {
         useShader(vertex(), fragment());
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        // show the frame and clear the screen
+        // show the frame on the screen
         swapBuffers();
+        // clear the screen for the next iteration
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
-    return 0;
 }
 ```
 
-Here the first thing to note is the function `get_rotation`, which constructs a basic rotation matrix from an angle. It's defined with the qualifier `glsl_function` which adds it to all shaders in the C++ file. Note that you can also call it from C++, as `glsl_function` does nothing on the C++ side. Includes are also followed by the shader parser, so you can define `glsl_function`s in a header file. In headers it might be useful to do `inline glsl_function`; the parser ignores anything before `glsl_function` so you can add any C++ qualifier in there.
-
-The next new thing is `Attribute`, which defines a vertex attribute view into a buffer. The type defines how the attribute will look in the shader, and the arguments of the constructor (which are `(Buffer buffer, int stride, int offset, int type, bool normalized)`) set up how the attribute will be read from the buffer, just as you would with `glVertexAttribPointer`. Here, `buffer` is the vertex buffer we stored our vertex data in, `stride` is the size of the `Vertex` struct, `offset` is 0 for the first attribute and `sizeof(vec2)` for the second, as that's how many bytes we have to skip to land in the beginning of the first color value. `type` is deduced from the element type of the template argument (for example `float` for `vec2` and `uint` for ´uvec4´); if your data is, say, `int16_t`, you'll have to give `GL_SHORT` in the constructor. `normalized` dictates how non-float input data is mapped to a float type in a shader. So `Attribute<vec3>(b, 2, 0, GL_SHORT, true)` would give attribute values between -1.0 and 1.0, but with `normalize=false` the range would be 0.0 to 65536.0. This is exactly how `glVertexAttribPointer` works, `Attribute` is just a thin wrapper around it.
-
-`TimeStamp` is a helper from `utils/gl_timing.h`. It lets you place timing events in code and measure elapsed cpu and gpu times between them; it's mainly useful for performance tuning, and has some overhead so should not be left in the final program. Here it's used just to show it off in context.
-
-Uniform values are bound simply with `bind()`, and attributes with `bind_attribute()`. Try binding an `Attribute` with a mismatched type in the `in` statement (for example, `in vec3 bind_attribute(position)`); you'll get a compile time error.
-
-Beyond the binds, there's relatively little special going on in the shaders. Notice how we use the `f` postfixes for floats; these get removed by the parser so no GLSL compiler gets confused. It's not strictly necessary but good practice to use the `f`s, since it keeps the C++ compiler from emitting loads of warnings about conversions between `float` and `double`.
-
-An `out` parameter from the framgent shader could be bound to render to a texture with `bind_target()`; this is not necessary here, as we're writing to the screen. Incidentally, there's a special global texture with the name `screen` that you can pass in when you write a generic shader that needs to be able to write either to the screen or a texture. So you could use it here; try replacing `screen` with `bind_target(screen)`. Similarly, there's a `bind_depth()` macro you can use to declare a depth target, and a special variable `screen_depth` for the default depth target.
-
-Then we do a drawcall, again giving the `Shader` objects returned by the shader lambdas to `useShader`. `swapBuffers` presents the image on the screen.
-
-Note that shaders are hot reloadable! This is always active, and the reloading is done by simply saving the file. Try running the program, and while it's running, change `get_rotation(t)` to `get_rotation(-t)` and save `main.cpp`. The triangle should jump a bit and start rotating in the other direction.
-
+Notice how we use `f` postfixes for floats like C++ and unlike GLSL. They get removed before compiling the shader so no GLSL compiler gets confused. It's not strictly necessary but good practice to use the `f`s, since it keeps the C++ compiler from emitting loads of warnings about conversions between `float` and `double`.
 
 ## screenshots
 
