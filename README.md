@@ -59,6 +59,8 @@ Let's look at a few usage examples in more detail. This is not a tutorial on C++
 
 ### simple compute shader
 
+![](https://user-images.githubusercontent.com/1880715/150009227-71b83b32-0033-4e7b-aa08-79465e41e135.png)
+
 We'll first go through the simple compute shader already shown above. There are more comments this time around; all crucial information is there, but some things are further explained below.
 
 ```C++
@@ -123,6 +125,8 @@ You should **not** store the `Shader` object returned by a shader lambda: call t
 
 
 ### rotating rgb triangle
+
+![](https://user-images.githubusercontent.com/1880715/150008489-79662388-f997-4f29-b10a-48279413fc9b.png)
 
 This one is a classic OpenGL example. We'll use it to illustrate how vertex attributes and uniforms work.
 
@@ -196,7 +200,7 @@ int main() {
 
 Here the first thing to note is the function `get_rotation`, which constructs a basic rotation matrix from an angle. It's defined with the qualifier `glsl_function` which adds it to all shaders in the C++ file. Note that you can also call it from C++, as `glsl_function` does nothing on the C++ side. Includes are also followed by the shader parser, so you can define `glsl_function`s in a header file. In headers it might be useful to do `inline glsl_function`; the parser ignores anything before `glsl_function` so you can add any C++ qualifier in there.
 
-The next new thing is `Attribute`, which defines a vertex attribute view into a buffer. The type defines how the attribute will look in the shader, and the arguments of the constructor (which are `(Buffer buffer, int stride, int offset, int type, bool normalized)`) set up how the attribute will be read from the buffer, just as you would with `glVertexAttribPointer`. Here, `buffer` is the vertex buffer we stored our vertex data in, `stride` is the size of the `Vertex` struct, `offset` is 0 for the first attribute and `sizeof(vec2)` for the second, as that's how many bytes we have to skip to land in the beginning of the first color value. `type` is deduced from the element type of the template argument (for example `float` for `vec2` and `uint` for ´uvec4´); if your data is, say, `int16_t`, you'll have to give `GL_SHORT` in the constructor. `normalized` dictates how non-float input data is mapped to a float type in a shader. So `Attribute<vec3>(b, 2, 0, GL_SHORT, true)` would give attribute values between -1.0 and 1.0, but with `normalize=false` the range would be 0.0 to 65536.0. This is exactly how `glVertexAttribPointer` works, `Attribute` is just a thin wrapper around it.
+The next new thing is `Attribute`, which defines a vertex attribute view into a buffer. The type defines how the attribute will look in the shader, and the arguments of the constructor (which are `(Buffer buffer, int stride, int offset, int type, bool normalized)`) set up how the attribute will be read from the buffer, just as you would with `glVertexAttribPointer`. Here, `buffer` is the vertex buffer we stored our vertex data in, `stride` is the size of the `Vertex` struct, `offset` is 0 for the first attribute and `sizeof(vec2)` for the second, as that's how many bytes we have to skip to land in the beginning of the first color value. `type` is deduced from the element type of the template argument (for example `float` for `vec2` and `uint` for Â´uvec4Â´); if your data is, say, `int16_t`, you'll have to give `GL_SHORT` in the constructor. `normalized` dictates how non-float input data is mapped to a float type in a shader. So `Attribute<vec3>(b, 2, 0, GL_SHORT, true)` would give attribute values between -1.0 and 1.0, but with `normalize=false` the range would be 0.0 to 65536.0. This is exactly how `glVertexAttribPointer` works, `Attribute` is just a thin wrapper around it.
 
 `TimeStamp` is a helper from `utils/gl_timing.h`. It lets you place timing events in code and measure elapsed cpu and gpu times between them; it's mainly useful for performance tuning, and has some overhead so should not be left in the final program. Here it's used just to show it off in context.
 
