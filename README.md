@@ -59,36 +59,55 @@ Let's look at a few usage examples in more detail. This is not a tutorial on C++
 
 ### simple compute shader
 
-We'll first go through the simple compute shader already shown above.
+We'll first go through the simple compute shader already shown above. There are more comments this time around; all crucial information is there, but some things are further explained below.
 
 ```C++
 #include <vector>
-#include "ssgl.h"
+#include "ssgl.h" // include ssgl.h last; it defines many iffy macros that will break some other headers
 
 int main() {
-    // init OpenGL, create window
+    
+    // an OpenGL object creates and stores a window and its OpenGL context; after it goes out of scope, OpenGL is released and the window destroyed.
     OpenGL context(640, 480, "iota_example", false, false);
     
-    // reserve space
+    // similarly, a Buffer creates and stores an OpenGL buffer object. it's basically a std::unique_ptr but for an OpenGL object instead of system memory
     Buffer iota;
+    // the Buffer object is implicitly castable to GLuint so you can use it with all standard OpenGL functions
     glNamedBufferData(iota, 1024 * 1024 * sizeof(uint32_t), nullptr, GL_STATIC_DRAW);
     
-    // the shader itself
+    // the shader itself : do remember to capture everything with the &!
     auto fill = [&] {
+
+        // this scope is the global scope of the shader; nothing can be executed here.
+        // instead, here we declare inputs, outputs, and some parameters of the shader program.
+
+        // first, since this is a compute shader, we define the local workgroup size (this is the standard GLSL syntax to do so):
         layout (local_size_x = 256) in;
+        
+        // SSBOs and UBOs are bound using "bind_block", since they're followed by a block that defines their contents.
+        // bind_block takes the Buffer object from the scope above and passes it to the shader
         buffer bind_block(iota) {
-            dynamic_array(uint, result); // replacement for "uint result[];"
+            // since the dynamic array syntax in GLSL ("uint result[];") is illegal in C++, we define dynamic arrays like this instead:
+            dynamic_array(uint, result);
         };
+
+        // we already have a main in C++, so we'll use "glsl_main" as the GLSL entry point
         void glsl_main() {
+            // this is where the GPU will start running our code!
+
+            // for this example, we'll just write the index of the current thread to the corresponding array element
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
         }
     };
     
-    // call the shader
-    useShader(fill());
+    // useShader binds our shader as the current shader and automatically binds all of the required objects
+    useShader(fill()); // note that we're *calling* the lambda here, not just passing it in!
+
+    // this is the actual call to the shader: it's the same as calling a global function on CUDA or clEnqueueNDRangeKernel in OpenCL.
+    // the arguments give the global size; the local size was already defined in the shader and all other arguments are handled by useShader
     glDispatchCompute(1024*4, 1, 1);
     
-    // display results
+    // display results to check that something actually happened
     std::vector<uint32_t> result(1024 * 1024);
     glGetNamedBufferSubData(iota, 0, sizeof(uint32_t) * result.size(), result.data());
     for (int i = 0; i<1024*1024; i+=64*1024)
@@ -96,25 +115,11 @@ int main() {
 }
 ```
 
-To set the scene, we first create two objects, of types `OpenGL` and `Buffer`. These are context objects that make life easier; `OpenGL` corresponds to an OpenGL context and a window, and `Buffer` to an OpenGL buffer object. The types are prepared such that we'll have access to the desired object while the objects are in scope, after which they're automatically discarded. C++ destroys objects in the first-in-last-out order, so `iota` will be released before `context`. This is great, as trying to release an OpenGL object after OpenGL itself would be a potential disaster.
+The other rationale for `dynamic_array` is that C++ flexible arrays don't have the `.length()` member that GLSL dynamic arrays do; in this example, you could call `result.length()` in the shader, but there's no way to make this work if we just wrote `uint result[];`.
 
-Note that we can pass `iota` directly to any OpenGL function, such as `glNamedBufferData` and `glGetNamedBufferSubData` here, since `Buffer` is implicitly castable to `GLuint`. This is similar to calling `.get()` on a `std::unique_ptr`, but there's no real potential for confusion here so the cast is made implicit.
+If you wish to edit properties of the shader manually, you can do so between `useShader()` and your draw call.
 
-Then we get to the shader itself. Here, this is the lambda stored to `fill`. We want to capture everything by reference to avoid copying things. The full shader code is written inside the lambda, including the setup and declarations before `main`, which is renamed to `glsl_main` (to avoid confusion, as most C++ programs also contain a `main`).
-
-The `layout (local_size_x = 256) in;` line is standard GLSL, it sets the local group size for compute shaders; there are three axes (`local_size_x`, `local_size_y`, `local_size_z`). Axes that are not set default to a size of 1.
-
-The `buffer` definition is slightly non-standard; namely, the name of the buffer (`iota`) is wrapped in the `bind_block()` macro. This is the part that lets ssgl generate code that automatically binds the SSBO. We'll later see other variants of the `bind` macro; `bind_block` is used for SSBOs and UBOs, since their declarations are followed by a struct-like block that defines the contents.
-
-The `dynamic_array(uint, result);` is a straight-up macro that maps to `uint result[];`. This is for two reasons: flexible arrays as union members are not legit C++ and thus not permitted by all compilers, and a flexible array doesn't have the `.length()` member that dynamic arrays in GLSL have. Using the `dynamic_array` macro bypasses both of these issues; the code compiles everywhere, and we can use `result.length()` to determine the length of the array.
-
-As already mentioned, `glsl_main` is just the name we use for the `main` function of a GLSL shader to avoid name clashes with the C++ `main`. This statement is the only necessary one, it makes the lambda actually produce a `Shader` object when called.
-
-`useShader` takes in all of the desired shaders, compiles them into a program and sets it as the current program. If you wish to edit any properties of the shader manually, you can do so between `useShader()` and your draw call. Notice that the argument of `useShader()` is **not** the lambda, but the `Shader` object returned by the lambda: we write `useShader(fill())`, not `useShader(fill)`. You could in principle get the `Shader` object first and pass that into `useShader`, but doing so has little benefit and doing certain operations between the two is not permitted, so calling the lambdas in the `useShader` argument list is the safest route.
-
-The rest of the program is very standard; we dispatch a compute operation with the shader, read some results back, and print some of the values to see that something actually happened.
-
-A small but important thing to note is that `ssgl.h` should always be included after any other headers. It defines some relatively common words (`in`, `out`, `buffer`, ...) as macros (since those are used by GLSL), and can mess up the way other headers work.
+You should **not** store the `Shader` object returned by a shader lambda: call the lambda every time you call `useShader()`. The values of the binds are updated by calling the lambda, so using the old `Shader` might mess things up when objects change names or names change objects.
 
 
 ### rotating rgb triangle
