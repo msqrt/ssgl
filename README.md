@@ -65,31 +65,37 @@ We'll first go through the simple compute shader already shown above. There are 
 
 ```C++
 #include <vector>
-#include "ssgl.h" // include ssgl.h last; it defines many iffy macros that will break some other headers
+ // include ssgl.h last; it defines many iffy macros that will break some other headers
+#include "ssgl.h"
 
 int main() {
     
-    // an OpenGL object creates and stores a window and its OpenGL context; after it goes out of scope, OpenGL is released and the window destroyed.
+    // an OpenGL object creates and stores a window and its OpenGL context;
+    // after it goes out of scope, OpenGL is released and the window destroyed.
     OpenGL context(640, 480, "iota_example", false, false);
     
-    // similarly, a Buffer creates and stores an OpenGL buffer object. it's basically a std::unique_ptr but for an OpenGL object instead of system memory
+    // a Buffer creates and stores an OpenGL buffer object
+    // it's basically a std::unique_ptr but for an OpenGL object instead of system memory
     Buffer iota;
-    // the Buffer object is implicitly castable to GLuint so you can use it with all standard OpenGL functions
+
+    // the Buffer is implicitly castable to GLuint so you can use it with OpenGL functions
     glNamedBufferData(iota, 1024 * 1024 * sizeof(uint32_t), nullptr, GL_STATIC_DRAW);
     
     // the shader itself : do remember to capture everything with the &!
     auto fill = [&] {
 
         // this scope is the global scope of the shader; nothing can be executed here.
-        // instead, here we declare inputs, outputs, and some parameters of the shader program.
+        // instead, here we declare inputs, outputs, and parameters of the shader
 
-        // first, since this is a compute shader, we define the local workgroup size (this is the standard GLSL syntax to do so):
-        layout (local_size_x = 256) in;
+        // first, since this is a compute shader, we define the local workgroup size:
+        layout (local_size_x = 256) in; // (this is standard GLSL syntax)
         
-        // SSBOs and UBOs are bound using "bind_block", since they're followed by a block that defines their contents.
-        // bind_block takes the Buffer object from the scope above and passes it to the shader
+        // SSBOs and UBOs are bound using "bind_block", as their contents are defined
+        // in a block following the declaration. bind_block takes the Buffer object
+        // with the same name ("iota") from the scope above and passes it to the shader
         buffer bind_block(iota) {
-            // since the dynamic array syntax in GLSL ("uint result[];") is illegal in C++, we define dynamic arrays like this instead:
+            // the GLSL dynamic array syntax ("uint result[];") is illegal in C++.
+            // so we define dynamic arrays like this instead:
             dynamic_array(uint, result);
         };
 
@@ -97,16 +103,17 @@ int main() {
         void glsl_main() {
             // this is where the GPU will start running our code!
 
-            // for this example, we'll just write the index of the current thread to the corresponding array element
+            // for this example, we'll write the index of the current thread to the array.
+            // GLSL programs can be arbitrarily complex, this is just for the sake of brevity
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
         }
     };
     
-    // useShader binds our shader as the current shader and automatically binds all of the required objects
+    // useShader sets our shader as the current shader and binds all of the required objects
     useShader(fill()); // note that we're *calling* the lambda here, not just passing it in!
 
-    // this is the actual call to the shader: it's the same as calling a global function on CUDA or clEnqueueNDRangeKernel in OpenCL.
-    // the arguments give the global size; the local size was already defined in the shader and all other arguments are handled by useShader
+    // this is the actual call to the shader. the arguments give the global size;
+    // the local size is defined in the shader and all other arguments are handled by useShader
     glDispatchCompute(1024*4, 1, 1);
     
     // display results to check that something actually happened
