@@ -47,6 +47,10 @@ The project aims to make shader development smoother with this injection of GLSL
 * free functions can be called from shader code; you can implement functions once and call them both on the CPU and the GPU
 * no custom extensions are required, thus all major compilers are supported (tested on MSVC, GCC, and clang)
 
+Since the code is C++ under the hood, IDE features like Intellisense work properly with shaders. This significantly reduces type errors as they're caught instantly after being written:
+
+![](https://i.imgur.com/QnwMIau.png)
+
 To be clear, the project is **not** about adding C++ features to shaders, or being able to run shaders on the CPU (even though the latter is possible to an extent). All of the shader code will be standard GLSL and run on the GPU. The point is that GLSL now sits within C++, improving the development experience by making shaders nicer to write and reducing the need for uninteresting code.
 
 The project is written against C++17 and OpenGL 4.6. The C++17 features are strictly necessary, but OpenGL could be ported back at least to 3.0 -- the main hurdle would be to convert all DSA code to the old model.
@@ -229,22 +233,6 @@ int main() {
 ```
 
 Notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They get removed before compiling the shader so no GLSL compiler gets confused. It's not strictly necessary but good practice to use the `f`s, since it keeps the C++ compiler from emitting loads of warnings about conversions between `float` and `double`.
-
-## screenshots
-
-Here are a few screenshots of how development can look. These were produced with Visual Studio 2019.
-
-Here we see a development session working on a simple renderer with shadow mapping. Note how little supporting code is required to use features like render to texture, and how the IDE (here, Visual Studio) recognizes what's going on.
-
-![](https://i.imgur.com/oYrj8oQ.png)
-
-Since the code is C++ under the hood, IDE features like Intellisense work properly with shaders. GLSL vector types (including swizzles) and math functions are also available on the CPU side.
-
-![](https://i.imgur.com/QnwMIau.png)
-
-Functions are also supported, though they need to be tagged so that the system knows to include them in the shader.
-
-![](https://i.imgur.com/KDyPcXR.png)
 
 ## reference
 
