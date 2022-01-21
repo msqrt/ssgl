@@ -47,7 +47,7 @@ The project aims to make shader development smoother with this injection of GLSL
 * free functions can be called from shader code; you can implement functions once and call them both on the CPU and the GPU
 * no custom extensions are required, thus all major compilers are supported (tested on MSVC, GCC, and clang)
 
-Since the code is C++ under the hood, IDE features like Intellisense work properly with shaders. This significantly reduces type errors as they're caught instantly after being written:
+Since the code is C++ under the hood, IDE features like Intellisense work properly with shaders. This significantly reduces obvious errors as they're caught instantly after being written:
 
 ![](https://i.imgur.com/QnwMIau.png)
 
