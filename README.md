@@ -47,7 +47,7 @@ The project aims to make shader development smoother with this injection of GLSL
 * free functions can be called from shader code; you can implement functions once and call them both on the CPU and the GPU
 * no custom extensions are required, thus all major compilers are supported (tested on MSVC, GCC, and clang)
 
-Since the code is C++ under the hood, IDE features like Intellisense work properly with shaders. This significantly reduces obvious errors as they're caught instantly after being written:
+Since the code is C++ under the hood, IDE features like Intellisense work properly with shaders. This efficiently prevents making trivial type or syntax mistakes, as they're caught already while writing the code:
 
 ![](https://i.imgur.com/QnwMIau.png)
 
@@ -232,7 +232,14 @@ int main() {
 }
 ```
 
-Notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They get removed before compiling the shader so no GLSL compiler gets confused. It's not strictly necessary but good practice to use the `f`s, since it keeps the C++ compiler from emitting loads of warnings about conversions between `float` and `double`.
+Crucially, there are no Vertex Array Objects (VAO) or Framebuffer Objects (FBO). The only extra abstraction for turning a buffer into a vertex attribute is the `Attribute` class that defines where the attribute values are to be read from, and rendering into textures is performed by binding the desired texture directly without an intermediate object. Here we only drew to the screen which requires no FBOs in standard GL either, but rendering to textures in ssgl looks exactly the same (see the next example). Naturally VAOs and FBOs exist behind the scenes, as OpenGL requires them to be used. Automating their use can incur a performance cost, as it reduces the opportunities to reuse objects and avoid state changes. Still, the uplift in convenience is difficult to overstate. Moreover, the present goal of the library is more in prototyping than large scale development, so the choice is clear.
+
+Also notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They get removed before compiling the shader so no GLSL compiler gets confused. It's not strictly necessary but good practice to use the `f`s, since it keeps the C++ compiler from emitting loads of warnings about conversions between `float` and `double`.
+
+### Simple global illumination and subsurface scattering
+
+coming shortly
+
 
 ## reference
 
