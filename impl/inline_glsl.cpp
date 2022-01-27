@@ -523,6 +523,8 @@ namespace inline_glsl {
         return programs[location].p;
     }
 
+    std::vector<GLenum> draw_buffers;
+
     void useShader(const Shader& compute, const Shader& vertex, const Shader& geometry, const Shader& control, const Shader& evaluation, const Shader& fragment, std::vector<ProgramEntry>& programs, ShaderState& shader_state, SourceStore& store) {
 
         int64_t ids[] = { compute.unique_id, vertex.unique_id, fragment.unique_id, geometry.unique_id, control.unique_id, evaluation.unique_id };
@@ -576,6 +578,14 @@ namespace inline_glsl {
 
         glUseProgram(program.obj);
 
+        if (draw_buffers.size() == 0) {
+            GLint maxBuffers;
+            glGetIntegerv(GL_MAX_DRAW_BUFFERS, &maxBuffers);
+            draw_buffers.resize(maxBuffers);
+        }
+        for (auto& b : draw_buffers)
+            b = GL_NONE;
+
         shader_state.fbo = program.fbo;
         shader_state.program = program.obj;
         shader_state.texture_unit = shader_state.image_unit = shader_state.fbo_width = shader_state.fbo_height = 0;
@@ -596,6 +606,8 @@ namespace inline_glsl {
             //auto test = glCheckFramebufferStatus(GL_FRAMEBUFFER);
             //if (test != GL_FRAMEBUFFER_COMPLETE)
             //    printf("framebuffer status %X\n", test);
+
+            glDrawBuffers(draw_buffers.size(), draw_buffers.data());
         }
         else {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -740,6 +752,7 @@ namespace inline_glsl {
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + store.location, store.item, store.item.level, store.item.layer);
         else
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + store.location, store.item, store.item.level);
+        draw_buffers[store.location] = GL_COLOR_ATTACHMENT0 + store.location;
     }
     void Arg::bind(ShaderState& shader_state, ArgStore<DepthTarget>& store) {
         //printf("attach %s to depth\n", store.name);
