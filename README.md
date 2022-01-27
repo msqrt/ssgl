@@ -239,8 +239,9 @@ Also notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They
 
 ### Simple global illumination and subsurface scattering
 
-coming shortly
+![image](https://user-images.githubusercontent.com/1880715/151415036-80650b16-c8c0-4229-ad4f-9f2407a14e93.png)
 
+This is a slightly more complicated example that lets us explore the rest of the key features in ssgl.
 
 ## reference
 
