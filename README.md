@@ -270,7 +270,8 @@ int main() {
     glNamedBufferData(indexBuffer, sizeof(inds), inds, GL_STATIC_DRAW);
     Attribute<vec3> position(vertexBuffer, sizeof(vec3), 0);
 
-    // create textures to render to
+    // create textures to render to. for reflective shadow maps we need to have an
+    // enriched shadow map with normal and color information.
     Texture<GL_TEXTURE_2D> color, normal, depth;
     glTextureStorage2D(color, 1, GL_RGB32F, 2048, 2048);
     glTextureStorage2D(normal, 1, GL_RGB32F, 2048, 2048);
@@ -292,8 +293,11 @@ int main() {
         mat4 worldToClip = perspective(.5f, 16.f/9.f, .1f, 30.f) * inverse(cameraToWorld);
         mat4 worldToLight = ortho(12.f, 1.f, -7.f, 7.f) * inverse(lookAt(ldir, vec3(.0f)));
 
-        // this vertex shader will be used for both the shadow map and the final pass, but with a different matrix:
-        // since the shader lambda cannot take arguments, we wrap it in another lambda that just calls the shader.
+        // this vertex shader will be used for both the shadow map and the final pass,
+        // but with different matrices; for this to work, we have to rename the input
+        // by passing it as an argument. as the shaders themselves can only capture
+        // inputs, we need to introduce an extra scope, here done by wrapping the shader
+        // in an outer generator lambda.
         auto vertex = [&](mat4 matrix) {
             return [&] {
                 uniform float bind(t);
@@ -301,9 +305,11 @@ int main() {
                 in vec3 bind_attribute(position);
                 out vec3 col, p;
 
-                // a local function is written with the glsl_func() macro. these are useful
-                // as they automatically get access to uniforms and such, unlike global functions.
-                // the "arg_out" macro corresponds to "out vec3". "arg_inout" and "arg_in" are also available.
+                // a local function is introduced using the glsl_func() macro.
+                // local functions are useful as they automatically get access to uniforms
+                // and such, unlike global functions, like gl_InstanceID here.
+                // the "arg_out" macro corresponds to "out vec3" and "vec3&".
+                // "arg_inout" and "arg_in" are also available.
                 vec3 glsl_func(get_position)(vec3 p, arg_out(vec3) col, float t) {
                     // this function repositions a bunch of cubes to generate the scene
                     if (gl_InstanceID == 0) {
@@ -330,7 +336,8 @@ int main() {
         };
         // the first fragment shader will populate the shadow maps (with color+normal instead of just depth)
         auto lightFragment = [&] {
-            // it's up to the user to make sure that the render target sizes match; viewport will be set to (0,0,w,h) automatically.
+            // it's up to the user to make sure that the render target sizes match;
+            // viewport will be set to (0,0,w,h) automatically.
             out vec3 bind_target(color, normal);
             out float bind_depth(depth); // we could also write to depth manually, but this is not necessary
             in vec3 col, p;
@@ -376,7 +383,7 @@ int main() {
                 // a different seed for each pixel every frame
                 srnd(uint(gl_FragCoord.x) + 1280 * uint(gl_FragCoord.y) + floatBitsToUint(t));
 
-                // loop for PCF and the shadow map based subsurface scattering
+                // loop for shadow filtering and the shadow map based subsurface scattering
                 for (int i = 0; i < 8; ++i) {
                     vec2 jitter = (vec2(rnd(), rnd()) - .5f) / vec2(textureSize(depth, 0))*2.f;
                     // difference between shadow map and current fragment depth from the light
@@ -394,8 +401,10 @@ int main() {
                 shadow /= 8.f;
                 scatter /= 8.f;
 
-                // loop for RSM; basically each shadow map texel is treated as a VPL and
-                // the total contribution of all VPLs is stochastically evaluated
+                // reflective shadow mapping: each shadow map texel is treated as a virtual point light (VPL) and
+                // the total contribution of all VPLs is stochastically evaluated by taking the average
+                // of the colors of a set of random trials. to simplify things, we don't care if the current
+                // fragment and the VPL are actually mutually visible or not
                 vec3 indirect = vec3(.0f);
                 for (int i = 0; i < 16; ++i) {
                     // pick a texel
