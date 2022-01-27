@@ -241,7 +241,212 @@ Also notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They
 
 ![image](https://user-images.githubusercontent.com/1880715/151415036-80650b16-c8c0-4229-ad4f-9f2407a14e93.png)
 
-This is a slightly more complicated example that lets us explore the rest of the key features in ssgl.
+This is a slightly more complicated example that lets us explore the rest of the key features in ssgl. The basic gist is we define some geometry procedurally and use [reflective shadow maps](http://www.klayge.org/material/3_12/GI/rsm.pdf) and [depth map based absorption](https://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch16.html) to light it nicely. The graphics techniques aren't the point here and will only be skimmed over, the key thing is in rendering to multiple targets simultaneously and using the results in a second pass.
+
+```
+#include "ssgl.h"
+#include "gl_timing.h"
+
+// for perspective(), lookat(), and rnd()
+// do check math_helpers.h out; both "pi" and "rnd_seed" are defined as glsl_global.
+// this is equivalent to glsl_function but for variables.
+#include "math_helpers.h"
+
+// the "arg_out" macro will become "vec3&" for C++ and "out vec3" for GLSL. "arg_inout" and "arg_in" are also available.
+glsl_function vec3 get_position(vec3 p, arg_out(vec3) col, float t, uint ID) {
+    // this function repositions a bunch of cubes to generate the scene
+    if (ID == 0) {
+        p.xz *= 4.f;
+        p.y = -1.f + p.y * .1f;
+        col = vec3(.8f);
+    }
+    else {
+        srnd(ID);
+        vec3 n = normalize(vec3(rnd() - .5f, 2.f, rnd() - .5f));
+        float angle = rnd() * 2.f * pi + t * 10.f;
+        float c = cos(angle), s = sin(angle);
+        p.xy *= .05f;
+        p.x += 2.f + rnd();
+        mat3 B = basis(n);
+        p.xyz = mat3(B[1], B[2], B[0]) * mat3(c, .0f, s, .0f, 1.f, .0f, -s, .0f, c) * p.xyz;
+        col = mix(vec3(.2f, .1f, .05f), vec3(.8f, .4f, .1f), rnd());
+    }
+    return p;
+}
+
+int main() {
+    // init OpenGL, create window
+    OpenGL context(1280, 720, "Cubes");
+    glEnable(GL_CULL_FACE); glEnable(GL_DEPTH_TEST);
+
+    // create a vertex attribute and index list for a cube
+    vec3 verts[8];
+    for (int i = 0; i < 8; ++i)
+        verts[i] = vec3(i & 1, (i/2)&1, (i/4)&1)*2.f - 1.f;
+    uvec3 inds[] = {
+        {0,2,1}, {1,2,3}, {0,4,2}, {2,4,6}, {0,1,4}, {4,1,5},
+        {2,6,3}, {3,6,7}, {1,3,5}, {5,3,7}, {4,5,6}, {6,5,7}
+    };
+
+    Buffer vertexBuffer, indexBuffer;
+    glNamedBufferData(vertexBuffer, sizeof(verts), verts, GL_STATIC_DRAW);
+    glNamedBufferData(indexBuffer, sizeof(inds), inds, GL_STATIC_DRAW);
+    Attribute<vec3> position(vertexBuffer, sizeof(vec3), 0);
+
+    // create textures to render to
+    Texture<GL_TEXTURE_2D> color, normal, depth;
+    glTextureStorage2D(color, 1, GL_RGB32F, 2048, 2048);
+    glTextureStorage2D(normal, 1, GL_RGB32F, 2048, 2048);
+    glTextureStorage2D(depth, 1, GL_DEPTH24_STENCIL8, 2048, 2048);
+
+    // start timing
+    TimeStamp start;
+
+    int instances = 800;
+
+    // define the direction of the light
+    vec3 ldir = normalize(vec3(1.f, 2.f, 1.f));
+    // while window open and ESC not pressed
+    while (loop()) {
+        // get elapsed time
+        TimeStamp now;
+        float t = .00005f*(float)cpuTime(start, now);
+
+        // compute matrices to transform between world, camera, and light spaces
+        mat4 cameraToWorld = lookAt(vec3(cos(t), .4f, sin(t))*12.f, vec3(.0f));
+        mat4 worldToClip = perspective(.5f, 16.f/9.f, .1f, 30.f) * inverse(cameraToWorld);
+        mat4 worldToLight = ortho(12.f, 1.f, -7.f, 7.f) * inverse(lookAt(ldir, vec3(.0f)));
+
+        // this vertex shader will be used for both the shadow map and the final pass, but with a different matrix:
+        // since the shader lambda cannot take arguments, we wrap it in another lambda that just calls the shader.
+        auto vertex = [&](mat4& matrix) {
+            return [&] {
+                uniform float bind(t);
+                uniform mat4 bind(matrix);
+                in vec3 bind_attribute(position);
+                out vec3 col, p;
+                void glsl_main() {
+                    p = get_position(position, col, t, gl_InstanceID);
+                    gl_Position = matrix * vec4(p, 1.f);
+                }
+            }();
+        };
+        // the first fragment shader will populate the shadow maps (with color+normal instead of just depth)
+        auto lightFragment = [&] {
+            // it's up to the user to make sure that the render target sizes match; viewport will be set to (0,0,w,h) automatically.
+            out vec3 bind_target(color, normal);
+            out float bind_depth(depth); // we could also write to depth manually, but this is not necessary
+            in vec3 col, p;
+            void glsl_main() {
+                // just write the outputs
+                color = col;
+                normal = normalize(cross(dFdx(p), dFdy(p)));
+            }
+        };
+
+        // set up the shader and draw
+        useShader(vertex(worldToLight), lightFragment());
+        // here's the time to setup extra stuff like an index buffer:
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+        // useShader() binds the targets so we can clear them here
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // glViewport(...) // we can set the viewport manually here if desired
+        
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, instances);
+
+        // actually draw to the screen
+        auto fragment = [&] {
+            uniform mat4 bind(worldToLight);
+            uniform vec3 bind(ldir);
+            uniform float bind(t);
+            in vec3 col, p;
+            // samplers are bound just like any uniform
+            // remember, depth is in the x channel only.
+            uniform sampler2D bind(color, normal, depth);
+
+            // if we don't bind the output, we always write to the screen and can choose any variable name.
+            out vec3 out_color;
+
+            // a local function is written with the glsl_func() macro. these are useful
+            // as they automatically get access to uniforms and such, unlike global functions.
+            vec3 glsl_func(evaluate_scatter)(vec2 location, float penetration) {
+                // evaluate beer-lambert at some point and for some length of penetration
+                float irradiance = max(.0f, dot(texture(normal, location).xyz, ldir));
+                vec3 optical_length = 60.f * penetration / texture(color, location).xyz;
+                return .2f * col * irradiance * exp(min(vec3(.0f), optical_length));
+            }; // <-- since glsl_func() maps to a lambda under the hood, we need a semicolon here!
+
+            void glsl_main() {
+                vec3 n = normalize(cross(dFdx(p), dFdy(p)));
+
+                // compute the light space coordinate of our screen fragment
+                vec4 lNDC = worldToLight * vec4(p, 1.f);
+                lNDC.xyz = (lNDC.xyz/lNDC.w)*.5f+.5f;
+
+                float shadow = .0f;
+                vec3 scatter = vec3(.0f);
+
+                // a different seed for each pixel every frame
+                srnd(uint(gl_FragCoord.x) + 1280 * uint(gl_FragCoord.y) + floatBitsToUint(t));
+
+                // loop for PCF and the shadow map based subsurface scattering
+                for (int i = 0; i < 8; ++i) {
+                    vec2 jitter = (vec2(rnd(), rnd()) - .5f) / vec2(textureSize(depth, 0))*2.f;
+                    // difference between shadow map and current fragment depth from the light
+                    float penetration = texture(depth, lNDC.xy + jitter).x - lNDC.z;
+                    // shadow mapping
+                    if (penetration > -.001f)
+                        shadow += 1.f;
+                    // scattering
+                    if (col.b < .2f)
+                        scatter += evaluate_scatter(lNDC.xy + jitter, penetration);
+                }
+                shadow /= 8.f;
+                scatter /= 8.f;
+
+                // loop for RSM; basically each shadow map texel is treated as a VPL and
+                // the total contribution of all VPLs is stochastically evaluated
+                vec3 indirect = vec3(.0f);
+                for (int i = 0; i < 16; ++i) {
+                    // pick a texel
+                    float angle = rnd() * 2.f * pi;
+                    vec2 offset = lNDC.xy+vec2(cos(angle), sin(angle)) * sqrt(float(i) + rnd())*.02f;
+
+                    // backproject the VPL location
+                    vec4 vpl_pos = inverse(worldToLight)*vec4(offset*2.f-1.f, texture(depth, offset).x*2.f-1.f, 1.0f);
+                    vpl_pos.xyz /= vpl_pos.w;
+                    vec3 diff = p - vpl_pos.xyz;
+
+                    // read normal and color of VPL
+                    vec3 vpl_normal = texture(normal, offset).xyz;
+                    vec3 vpl_col = texture(color, offset).xyz;
+                    
+                    // limit the normalization factor to avoid bright splotches
+                    float lensq = max(dot(diff, diff), .4f);
+
+                    // the geometric term between the VPL and the receiver
+                    diff = normalize(diff);
+                    float G = max(.0f, dot(-diff, n)) * max(.0f, dot(diff, vpl_normal)) / lensq;
+                    indirect += col * vpl_col * G;
+                }
+                indirect /= 16.f;
+
+                vec3 direct = shadow * col * max(.0f, dot(n, ldir));
+                out_color = direct + indirect + scatter;
+            }
+        };
+
+        // set up the shader and draw
+        useShader(vertex(worldToClip), fragment());
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, instances);
+
+        // show the frame and clear the screen
+        swapBuffers();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+}
+```
 
 ## reference
 
