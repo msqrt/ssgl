@@ -246,33 +246,10 @@ This is a slightly more complicated example that lets us explore the rest of the
 ```C++
 #include "ssgl.h"
 #include "gl_timing.h"
+#include "math_helpers.h" // for pi, perspective(), lookat(), and rnd()
 
-// for perspective(), lookat(), and rnd()
-// do check math_helpers.h out; both "pi" and "rnd_seed" are defined as glsl_global.
-// this is equivalent to glsl_function but for variables.
-#include "math_helpers.h"
-
-// the "arg_out" macro will become "vec3&" for C++ and "out vec3" for GLSL. "arg_inout" and "arg_in" are also available.
-glsl_function vec3 get_position(vec3 p, arg_out(vec3) col, float t, uint ID) {
-    // this function repositions a bunch of cubes to generate the scene
-    if (ID == 0) {
-        p.xz *= 4.f;
-        p.y = -1.f + p.y * .1f;
-        col = vec3(.8f);
-    }
-    else {
-        srnd(ID);
-        vec3 n = normalize(vec3(rnd() - .5f, 2.f, rnd() - .5f));
-        float angle = rnd() * 2.f * pi + t * 10.f;
-        float c = cos(angle), s = sin(angle);
-        p.xy *= .05f;
-        p.x += 2.f + rnd();
-        mat3 B = basis(n);
-        p.xyz = mat3(B[1], B[2], B[0]) * mat3(c, .0f, s, .0f, 1.f, .0f, -s, .0f, c) * p.xyz;
-        col = mix(vec3(.2f, .1f, .05f), vec3(.8f, .4f, .1f), rnd());
-    }
-    return p;
-}
+// glsl_global is equivalent to glsl_function but for variables.
+glsl_global vec3 ldir = normalize(vec3(1.f, 2.f, 1.f));
 
 int main() {
     // init OpenGL, create window
@@ -304,8 +281,6 @@ int main() {
 
     int instances = 800;
 
-    // define the direction of the light
-    vec3 ldir = normalize(vec3(1.f, 2.f, 1.f));
     // while window open and ESC not pressed
     while (loop()) {
         // get elapsed time
@@ -319,14 +294,36 @@ int main() {
 
         // this vertex shader will be used for both the shadow map and the final pass, but with a different matrix:
         // since the shader lambda cannot take arguments, we wrap it in another lambda that just calls the shader.
-        auto vertex = [&](mat4& matrix) {
+        auto vertex = [&](mat4 matrix) {
             return [&] {
                 uniform float bind(t);
                 uniform mat4 bind(matrix);
                 in vec3 bind_attribute(position);
                 out vec3 col, p;
+
+                // a local function is written with the glsl_func() macro. these are useful
+                // as they automatically get access to uniforms and such, unlike global functions.
+                // the "arg_out" macro corresponds to "out vec3". "arg_inout" and "arg_in" are also available.
+                vec3 glsl_func(get_position)(vec3 p, arg_out(vec3) col, float t) {
+                    // this function repositions a bunch of cubes to generate the scene
+                    if (gl_InstanceID == 0) {
+                        p = vec3(p.x*4.f, -1.f + p.y * .1f, p.z*4.f);
+                        col = vec3(.8f);
+                    }
+                    else {
+                        srnd(gl_InstanceID);
+                        float angle = rnd() * 2.f * pi + t * 10.f;
+                        float c = cos(angle), s = sin(angle);
+                        p.xy = p.xy*.05f + vec2(2.f + rnd(),.0f);
+                        mat3 B = basis(normalize(vec3(rnd() - .5f, 2.f, rnd() - .5f)));
+                        p.xyz = mat3(B[1], B[2], B[0]) * mat3(c, .0f, s, .0f, 1.f, .0f, -s, .0f, c) * p.xyz;
+                        col = mix(vec3(.2f, .1f, .05f), vec3(.8f, .4f, .1f), rnd());
+                    }
+                    return p;
+                }; // <-- since glsl_func() maps to a lambda under the hood, we need a semicolon here!
+
                 void glsl_main() {
-                    p = get_position(position, col, t, gl_InstanceID);
+                    p = get_position(position, col, t);
                     gl_Position = matrix * vec4(p, 1.f);
                 }
             }();
@@ -357,7 +354,6 @@ int main() {
         // actually draw to the screen
         auto fragment = [&] {
             uniform mat4 bind(worldToLight);
-            uniform vec3 bind(ldir);
             uniform float bind(t);
             in vec3 col, p;
             // samplers are bound just like any uniform
@@ -366,15 +362,6 @@ int main() {
 
             // if we don't bind the output, we always write to the screen and can choose any variable name.
             out vec3 out_color;
-
-            // a local function is written with the glsl_func() macro. these are useful
-            // as they automatically get access to uniforms and such, unlike global functions.
-            vec3 glsl_func(evaluate_scatter)(vec2 location, float penetration) {
-                // evaluate beer-lambert at some point and for some length of penetration
-                float irradiance = max(.0f, dot(texture(normal, location).xyz, ldir));
-                vec3 optical_length = 60.f * penetration / texture(color, location).xyz;
-                return .2f * col * irradiance * exp(min(vec3(.0f), optical_length));
-            }; // <-- since glsl_func() maps to a lambda under the hood, we need a semicolon here!
 
             void glsl_main() {
                 vec3 n = normalize(cross(dFdx(p), dFdy(p)));
@@ -398,8 +385,11 @@ int main() {
                     if (penetration > -.001f)
                         shadow += 1.f;
                     // scattering
-                    if (col.b < .2f)
-                        scatter += evaluate_scatter(lNDC.xy + jitter, penetration);
+                    if (col.b < .2f) {
+                        float irradiance = max(.0f, dot(texture(normal, lNDC.xy + jitter).xyz, ldir));
+                        vec3 optical_length = 60.f * penetration / texture(color, lNDC.xy + jitter).xyz;
+                        scatter += .2f * col * irradiance * exp(min(vec3(.0f), optical_length));
+                    }
                 }
                 shadow /= 8.f;
                 scatter /= 8.f;
@@ -447,6 +437,8 @@ int main() {
     }
 }
 ```
+
+That's it! The tour is over; that's how you use ssgl. Below is a reference with slightly longer explanations and a couple of more obscure features that we skipped.
 
 ## reference
 
