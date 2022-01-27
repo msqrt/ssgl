@@ -128,7 +128,7 @@ int main() {
 }
 ```
 
-Another rationale for `dynamic_array` is that C++ flexible arrays don't have the `.length()` member that GLSL dynamic arrays do. In this example, you could call `result.length()` in the shader, but there's no way to make this work if we just wrote `uint result[];`. The GLSL syntax also doesn't compile under GCC, as the implementation of `bind_block` actually introduces the block as an union.
+Another rationale for `dynamic_array` is that C++ flexible arrays don't have the `.length()` member that GLSL dynamic arrays do. In this example, you could call `result.length()` in the shader, but there's no way to make this work if we just wrote `uint result[];`. The GLSL syntax also doesn't compile under GCC, as the implementation of `bind_block` actually introduces the block as a union.
 
 If you wish to edit properties of the shader manually, you can do so between `useShader()` and your draw call.
 
