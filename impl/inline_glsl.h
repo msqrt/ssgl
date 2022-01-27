@@ -208,7 +208,7 @@ namespace inline_glsl {
     template<typename T = UBO>
     struct ArgStore {
         const char* name;
-        GLuint location;
+        GLuint location, program;
         T item;
         ArgStore(const char* name, T i) : name(name), item(i) {
             //printf("retainer for %s\n", name);
@@ -328,8 +328,10 @@ namespace inline_glsl {
         Arg(volatile ArgStore<U>& store_, const U& j) : func([&, j, state = shader_state](ShaderState& shader_state) {
             ArgStore<U>& store = const_cast<ArgStore<U>&>(store_); // volatile is a legit keyword for images and buffers; the variable is not actually volatile so we cast it away
 
-            //if (shader_state.rebuilt)
+            if (shader_state.rebuilt || store.program != shader_state.program) {
+                store.program = shader_state.program;
                 findLocation(shader_state, store);
+            }
 
             store.item = j;
             if (store.location != -1)
