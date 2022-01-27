@@ -327,19 +327,16 @@ namespace inline_glsl {
         template<typename U>
         Arg(volatile ArgStore<U>& store_, const U& j) : func([&, j, state = shader_state](ShaderState& shader_state) {
             ArgStore<U>& store = const_cast<ArgStore<U>&>(store_); // volatile is a legit keyword for images and buffers; the variable is not actually volatile so we cast it away
-            bool update = store.item != U(j);
-            if (shader_state.rebuilt) {
+
+            //if (shader_state.rebuilt)
                 findLocation(shader_state, store);
-                update = true;
-            }
-            //if (update) {
+
             store.item = j;
             if (store.location != -1)
                 if constexpr (!is_image<U>)
                     bind(shader_state, store);
                 else
                     bind(shader_state, store, state.image_access, state.image_format);
-            //}
             }) {}
 
             ~Arg() { current_callbacks->push_back(std::move(func)); }
