@@ -243,7 +243,7 @@ Also notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They
 
 This is a slightly more complicated example that lets us explore the rest of the key features in ssgl. The basic gist is we define some geometry procedurally and use [reflective shadow maps](http://www.klayge.org/material/3_12/GI/rsm.pdf) and [depth map based absorption](https://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch16.html) to light it nicely. The graphics techniques aren't the point here and will only be skimmed over, the key thing is in rendering to multiple targets simultaneously and using the results in a second pass.
 
-```
+```C++
 #include "ssgl.h"
 #include "gl_timing.h"
 
@@ -456,7 +456,7 @@ This is a listing of all the types and macros in single source gl.
 
 The `bind` macros significantly reduce boiler plate code around drawcalls.
 
-```
+```C++
 bind(uniform_1, uniform_2, ...)
 uniform float bind(a, b, c);
 
@@ -476,7 +476,7 @@ uniform bind_block(buff) { /*UBO contents*/ };
 
 The `bind` macro family is the main difference in single source gl to typical shader programming. Instead of declaring values to be passed directly, we'll use the corresponding macro: `bind` for uniforms, `bind_attribute` for vertex attributes, `bind_target` for render targets, `bind_depth` for depth maps, and `bind_block` for SSBOs and UBOs. These take the object or value in the scope above and pass it to the shader **with the same name**, so there's no need to specify any indices or explicitly match objects to their names. The implementation relies on variable shadowing to produce a correctly typed local object; as such, you cannot just pass the object as a differently named argument. If you wish to call the same shader with multiple objects, you should place it in a function where the argument name is used as the name of the object:
 
-```
+```C++
 Shader wrapper(Buffer b) {
     return [&] {
         buffer bind_block(b) {/*whatever b contains*/};
@@ -488,7 +488,7 @@ which can now be set as the current shader with `useShader(wrapper(any_buffer))`
 
 Note that some of the `bind` macros can take multiple arguments: this is purely a convenience feature, you can also declare each (for example) uniform in its own statement. As usual, to be able to declare the objects on the same line, they'll need to be of the same type.
 
-```
+```C++
 dynamic_array(type, name)
 ```
 Since flexible arrays inside unions are not valid C++, an SSBO can't contain an array of the form `type name[]`; this GLSL construct is replaced by this macro. With some compilers you can use the GLSL syntax, but this doesn't let you query the length of the array; using `dynamic_array(type, name)` you can call `name.length()` in the shader, just as you typically would in GLSL.
@@ -497,7 +497,7 @@ Since flexible arrays inside unions are not valid C++, an SSBO can't contain an 
 
 single source gl also lets you use functions and variables declared outside of the shader scope.
 
-```
+```C++
 glsl_function
 inline glsl_function float test() {return .0f;}
 glsl_global
@@ -506,14 +506,14 @@ static glsl_global uint random_seed = 0;
 
 These two are straight forward, but very useful. `glsl_function` lets you write a function in the global scope, and makes it visible to both CPU and GPU side code. The system also supports includes, so you can place your functions in a header. Note that any specifiers before `glsl_function` are ignored, as the `inline` in the example above. `glsl_global` is basically the same, but introduces variables instead of functions. This is useful for global values such as mathematical constants and state required by global functions (GLSL doesn't have a static keyword, so for example random seeds have to be stored this way.)
 
-```
+```C++
 return_type glsl_func(name)(arguments) {/*function body*/};
 float glsl_func(twice)(float x) {return 2.f * x;};
 ```
 
 `glsl_func` is almost the same as `glsl_function`, but is for functions inside the shader body. Since C++ doesn't support local functions, this actually maps to a lambda; notice the necessary semicolon after the function body. This is most convenient when you want to, for example, read from an SSBO in a specific way multiple times and want to wrap the read in a function -- you can't pass an SSBO to a function in GLSL and you won't have access to one on the global scope, so a local function is necessary. (Note that actually reading from an SSBO in a `glsl_func` requires the newest version of VS2022 and compiling as c++20, older ones will give an "internal compiler error"; other compilers are fine with it.)
 
-```
+```C++
 arg_in(type)
 arg_out(type)
 arg_inout(type)
@@ -524,20 +524,20 @@ These macros are used to wrap `out` and `inout` argument types for `glsl_functio
 
 ### wrapper types
 
-```
+```C++
 struct OpenGL;
 Opengl(width, height, title, fullscreen, show);
 ```
 `OpenGL` is a RAII wrapper for an OpenGL context; constructing the object opens a context and makes it current, and . The constructor takes the parameters of the window: its size and title, if it's fullscreen, and if it should be shown at all. The last option is to support CLI programs where you don't want a window at all.
 
-```
+```C++
 struct Buffer;
 template<GLenum target> struct Texture;
 ```
 
 `Buffer` and `Texture` are RAII wrappers for OpenGL buffers and textures. They store a single object at a time and destroy it when the lifetime ends (similar to `unique_ptr`), or the object is replaced. The object is automatically constructed if no arguments are given, and the objects are implicitly convertible to their underlying GLuint values; so for example, you can pass a `Buffer` to `glNamedBufferStorage` to set up its storage. The type is also used to deduce bindings, so using these classes is required for the shader system to work. If you wish to track your lifetimes manually or with some other system, you can construct a non-owning `Buffer` or `Texture` by just passing the `GLuint` to the constructor (or the `GLuint` and `true` to pass ownership to the class). The `target` in `Texture` refers to the texture target (such as `GL_TEXTURE_2D`) -- to write a generic function that can take in any type, you should use `Texture<>` which stores the target dynamically.
 
-```
+```C++
 template<GLenum target>
 Texture<> Level(const Texture<target>& t, int level);
 template<GLenum target>
@@ -546,7 +546,7 @@ Texture<> Layer(const Texture<target>& t, int layer);
 
 `Level` and `Layer` take the MIP level or the 2D layer of the given `Texture`, and return a corresponding dynamically-targeted texture. This is so it's possible to write a shader that operates on a 2D texture, and pass in a specific MIP level or a layer of a 3D texture.
 
-```
+```C++
 template<typename T>
 struct Attribute;
 // to construct:
@@ -557,7 +557,7 @@ Attribute(const Buffer& b, int stride, int offset = 0, GLuint type = -1, bool no
 
 ### misc
 
-```
+```C++
 void useShader(const Shader& compute);
 void useShader(const Shader& vertex, const Shader& fragment);
 void useShader(const Shader& vertex, const Shader& geometry, const Shader& fragment);
@@ -566,7 +566,7 @@ void useShader(const Shader& vertex, const Shader& geometry, const Shader& contr
 ```
 `useShader` basically replaces `glUseProgram()` and most of the binding code. You give it the shaders corresponding to the shader stages you require. The OpenGL side shader programs themselves are cached, so compilation only happens on the first call to that specific combination of shaders.
 
-```
+```C++
 bool loop();
 void swapBuffers();
 void setTitle(const char* title);
@@ -584,7 +584,7 @@ ivec2 windowSize();
 ```
 These functions manage the window. Calling them might do something weird if there's no OpenGL context active. Going in order, `loop()` handles window messages and returns false if the program should quit (so your default main loop should be `while(loop())`). `swapBuffers()` presents the rendered frame from the default framebuffer on the screen. `setTitle()` changes the window title. `showWindow()` and `hideWindow()` make the window appear and disappear. `keyDown()` returns if the given key is currently held down, and `keyHit()` if it's been pressed down during this frame. `resetHits()` (automatically called by `loop()`) resets key hit status. `getMouse()` gets screen-relative mouse location in pixels (origin is top left of the window, x is to the right and y is down). `setMouse()` warps the pointer to the desired pixel (coordinates match `getMouse()`). `windowSize()` gets the current window resolution.
 
-```
+```C++
 glsl_extension(name, behavior)
 glsl_version(version)
 ```
