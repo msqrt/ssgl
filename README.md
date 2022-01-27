@@ -200,7 +200,8 @@ int main() {
             void glsl_main() {
                 col = color;
                 
-                // shaders are hot reloadable! try changing "t" to "0.5f*t" or "-t" and saving the file
+                // shaders are hot reloadable!
+                // try changing "t" to "0.5f*t" or "-t" and saving the file while the program is running
                 float angle = t;
 
                 // here we call get_rotation() defined in the beginning
