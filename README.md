@@ -447,7 +447,95 @@ int main() {
 }
 ```
 
-That's it! The tour is over; that's how you use ssgl. Below is a reference with slightly longer explanations and a couple of more obscure features that we skipped.
+That's it! The tour is over; that's how you use ssgl. Towards the bottom of this document is a reference with slightly longer explanations and a couple of more obscure features that we skipped.
+
+### Shadertoy adapter
+
+![image](https://user-images.githubusercontent.com/1880715/151568002-1718ca77-b7f1-49c8-870a-7580c63d669f.png)
+
+Just for fun, here's a snippet that lets you run most [Shadertoys](https://www.shadertoy.com/) in ssgl, you just need to prepend functions and globals with `glsl_function` and `glsl_global`. Be wary that the more esoteric syntax that some Shadertoys contain (passing swizzles as inout parameters, swizzling the result of a `*=` operation, using #defines inside a function, ...) might need to be simplified a bit.
+
+```C++
+#include "ssgl.h"
+#include "gl_timing.h"
+
+glsl_global vec3      iResolution;           // viewport resolution (in pixels)
+glsl_global float     iTime;                 // shader playback time (in seconds)
+glsl_global float     iTimeDelta;            // render time (in seconds)
+glsl_global int       iFrame;                // shader playback frame
+glsl_global vec4      iMouse;                // mouse pixel coords. xy: current (if MLB down), zw: click (actually spacebar)
+
+// shadertoy goes here:
+glsl_function void mainImage(out vec4 fragColor, in vec2 fragCoord)
+{
+    // Normalized pixel coordinates (from 0 to 1)
+    vec2 uv = fragCoord / iResolution.xy;
+
+    // Time varying pixel color
+    vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0, 2, 4));
+
+    // Output to screen
+    fragColor = vec4(col, 1.0);
+}
+
+int main() {
+    // init OpenGL, create window
+    OpenGL context(1280, 720, "Shadertoy");
+
+    // start timing
+    TimeStamp start;
+    
+    int frame = 0;
+    float old_t = .0f;
+    // while window open and ESC not pressed
+    while (loop()) {
+        frame++;
+        // get elapsed time
+        TimeStamp now;
+        float t = .001f*(float)cpuTime(start, now);
+        float dt = t - old_t;
+        old_t = t;
+
+        // generate a triangle large enough to cover the screen
+        auto vertex = [&] {
+            void glsl_main() {
+                gl_Position = vec4(gl_VertexID == 0 ? 4.f : -1.0f, gl_VertexID == 1 ? 4.f : -1.0f, .5f, 1.f);
+            }
+        };
+
+        ivec2 resolution = windowSize();
+        ivec4 mouse = ivec4(getMouse(), keyDown(VK_SPACE), keyHit(VK_SPACE));
+        
+        // just pass everything along to mainImage()
+        auto fragment = [&] {
+            out vec3 screen;
+            uniform float bind(t, dt);
+            uniform ivec2 bind(resolution);
+            uniform ivec4 bind(mouse);
+            uniform int bind(frame);
+
+            void glsl_main() {
+                iResolution.xy = vec2(resolution);
+                iTime = t;
+                iTimeDelta = dt;
+                iMouse = vec4(mouse);
+                iFrame = frame;
+                vec4 color;
+                mainImage(color, gl_FragCoord.xy);
+                screen = color.rgb;
+            }
+        };
+
+        // set up the shader and draw
+        useShader(vertex(), fragment());
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        // show the frame and clear the screen
+        swapBuffers();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+}
+```
 
 ## reference
 
