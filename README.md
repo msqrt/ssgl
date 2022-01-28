@@ -455,6 +455,8 @@ That's it! The tour is over; that's how you use ssgl. Towards the bottom of this
 
 Just for fun, here's a snippet that lets you run most [Shadertoys](https://www.shadertoy.com/) in ssgl, you just need to prepend functions and globals with `glsl_function` and `glsl_global`. Be wary that the more esoteric syntax that some Shadertoys contain (passing swizzles as inout parameters, swizzling the result of a `*=` operation, using #defines inside a function, ...) might need to be simplified a bit.
 
+Note that this makes the `mainImage` function a standard C++ function that you can call (and **debug**) on the CPU!
+
 ```C++
 #include "ssgl.h"
 #include "gl_timing.h"
