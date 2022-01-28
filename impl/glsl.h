@@ -259,6 +259,12 @@ namespace glsl {
             ((result.data[I2] = no_ptr<F2>(data[I])), ...);
             return result;
         }
+        template<int... I2>
+        operator Matrix<R, 1, no_ptr<F>, I2...>() const {
+            Matrix<R, 1, no_ptr<F>, I2...> result;
+            ((result.data[I2] = no_ptr<F>(data[I])), ...);
+            return result;
+        }
     };
 
     template<typename F, int I>
