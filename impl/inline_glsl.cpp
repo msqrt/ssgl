@@ -280,6 +280,15 @@ namespace inline_glsl {
         }
         search = contents.data();
         while (true) {
+            search = inline_glsl::search(search + 1, "#define", line);
+            if (*search != '\0') {
+                glsl_functions.push_back(search);
+                search++;
+            }
+            else break;
+        }
+        search = contents.data();
+        while (true) {
             search = inline_glsl::search(search + 1, "glsl_global", line);
             if (*search != '\0') {
                 glsl_functions.push_back(search + 11);
@@ -341,6 +350,11 @@ namespace inline_glsl {
             remove_bind_calls(c);
         }
         for (char* c : glsl_functions) {
+            if (*c == '#') {
+                while (*c!='\n' && *c!='\0') c++;
+                *c = '\0';
+                continue;
+            }
             while (*c != ';' && *c != '{' && *c != '(' && *c != '\0') c++;
             if (*c == '{') while (*c != ';' && *c != '\0') c++;
             if (*c == ';') *(c + 1) = '\0';
