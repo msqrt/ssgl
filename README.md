@@ -1,6 +1,6 @@
 # single source gl
 
-single source gl (ssgl) lets you write GLSL shaders as C++ lambdas that automatically capture shader inputs and outputs. This unifies code, brings powerful C++ tools into shader development, and removes code that just passes objects around.
+single source gl (ssgl) lets you prototype GLSL shaders as C++ lambdas that automatically capture shader inputs and outputs. This unifies code, brings powerful C++ tools into shader development, and removes code that just passes objects around. All of this makes it extremely fast to try out ideas and iterate on them.
 
 To illustrate, the following is a program that uses a compute shader to fill a buffer with a running count. Note how the whole program sits in a single file, and how calling `useShader` is all that's required to set up the drawcall. The shader is the lambda `fill`, and the main body of the shader is in `glsl_main`. `useShader` sets up the program and binds the buffer as instructed by the `bind_block` macro.
 ```C++
@@ -241,7 +241,213 @@ Also notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They
 
 ![image](https://user-images.githubusercontent.com/1880715/151415036-80650b16-c8c0-4229-ad4f-9f2407a14e93.png)
 
-This is a slightly more complicated example that lets us explore the rest of the key features in ssgl.
+This is a slightly more complicated example that lets us explore the rest of the key features in ssgl. The basic gist is we define some geometry procedurally and use [reflective shadow maps](http://www.klayge.org/material/3_12/GI/rsm.pdf) and [depth map based absorption](https://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch16.html) to light it nicely. The graphics techniques aren't the point here and will only be skimmed over, the key thing is in rendering to multiple targets simultaneously and using the results in a second pass.
+
+```C++
+#include "ssgl.h"
+#include "gl_timing.h"
+#include "math_helpers.h" // for pi, perspective(), lookat(), and rnd()
+
+// glsl_global is equivalent to glsl_function but for variables.
+glsl_global vec3 ldir = normalize(vec3(1.f, 2.f, 1.f));
+
+int main() {
+    // init OpenGL, create window
+    OpenGL context(1280, 720, "Cubes");
+    glEnable(GL_CULL_FACE); glEnable(GL_DEPTH_TEST);
+
+    // create a vertex attribute and index list for a cube
+    vec3 verts[8];
+    for (int i = 0; i < 8; ++i)
+        verts[i] = vec3(i & 1, (i/2)&1, (i/4)&1)*2.f - 1.f;
+    uvec3 inds[] = {
+        {0,2,1}, {1,2,3}, {0,4,2}, {2,4,6}, {0,1,4}, {4,1,5},
+        {2,6,3}, {3,6,7}, {1,3,5}, {5,3,7}, {4,5,6}, {6,5,7}
+    };
+
+    Buffer vertexBuffer, indexBuffer;
+    glNamedBufferData(vertexBuffer, sizeof(verts), verts, GL_STATIC_DRAW);
+    glNamedBufferData(indexBuffer, sizeof(inds), inds, GL_STATIC_DRAW);
+    Attribute<vec3> position(vertexBuffer, sizeof(vec3), 0);
+
+    // create textures to render to. for reflective shadow maps we need to have an
+    // enriched shadow map with normal and color information.
+    Texture<GL_TEXTURE_2D> color, normal, depth;
+    glTextureStorage2D(color, 1, GL_RGB32F, 2048, 2048);
+    glTextureStorage2D(normal, 1, GL_RGB32F, 2048, 2048);
+    glTextureStorage2D(depth, 1, GL_DEPTH24_STENCIL8, 2048, 2048);
+
+    // start timing
+    TimeStamp start;
+
+    int instances = 800;
+
+    // while window open and ESC not pressed
+    while (loop()) {
+        // get elapsed time
+        TimeStamp now;
+        float t = .00005f*(float)cpuTime(start, now);
+
+        // compute matrices to transform between world, camera, and light spaces
+        mat4 cameraToWorld = lookAt(vec3(cos(t), .4f, sin(t))*12.f, vec3(.0f));
+        mat4 worldToClip = perspective(.5f, 16.f/9.f, .1f, 30.f) * inverse(cameraToWorld);
+        mat4 worldToLight = ortho(12.f, 1.f, -7.f, 7.f) * inverse(lookAt(ldir, vec3(.0f)));
+
+        // this vertex shader will be used for both the shadow map and the final pass,
+        // but with different matrices; for this to work, we have to rename the input
+        // by passing it as an argument. as the shaders themselves can only capture
+        // inputs, we need to introduce an extra scope, here done by wrapping the shader
+        // in an outer generator lambda.
+        auto vertex = [&](mat4 matrix) {
+            return [&] {
+                uniform float bind(t);
+                uniform mat4 bind(matrix);
+                in vec3 bind_attribute(position);
+                out vec3 col, p;
+
+                // a local function is introduced using the glsl_func() macro.
+                // local functions are useful as they automatically get access to uniforms
+                // and such, unlike global functions, like gl_InstanceID here.
+                // the "arg_out" macro corresponds to "out vec3" and "vec3&".
+                // "arg_inout" and "arg_in" are also available.
+                vec3 glsl_func(get_position)(vec3 p, arg_out(vec3) col, float t) {
+                    // this function repositions a bunch of cubes to generate the scene
+                    if (gl_InstanceID == 0) {
+                        p = vec3(p.x*4.f, -1.f + p.y * .1f, p.z*4.f);
+                        col = vec3(.8f);
+                    }
+                    else {
+                        srnd(gl_InstanceID);
+                        float angle = rnd() * 2.f * pi + t * 10.f;
+                        float c = cos(angle), s = sin(angle);
+                        p.xy = p.xy*.05f + vec2(2.f + rnd(),.0f);
+                        mat3 B = basis(normalize(vec3(rnd() - .5f, 2.f, rnd() - .5f)));
+                        p.xyz = mat3(B[1], B[2], B[0]) * mat3(c, .0f, s, .0f, 1.f, .0f, -s, .0f, c) * p.xyz;
+                        col = mix(vec3(.2f, .1f, .05f), vec3(.8f, .4f, .1f), rnd());
+                    }
+                    return p;
+                }; // <-- since glsl_func() maps to a lambda under the hood, we need a semicolon here!
+
+                void glsl_main() {
+                    p = get_position(position, col, t);
+                    gl_Position = matrix * vec4(p, 1.f);
+                }
+            }();
+        };
+        // the first fragment shader will populate the shadow maps (with color+normal instead of just depth)
+        auto lightFragment = [&] {
+            // it's up to the user to make sure that the render target sizes match;
+            // viewport will be set to (0,0,w,h) automatically.
+            out vec3 bind_target(color, normal);
+            out float bind_depth(depth); // we could also write to depth manually, but this is not necessary
+            in vec3 col, p;
+            void glsl_main() {
+                // just write the outputs
+                color = col;
+                normal = normalize(cross(dFdx(p), dFdy(p)));
+            }
+        };
+
+        // set up the shader and draw
+        useShader(vertex(worldToLight), lightFragment());
+        // here's the time to setup extra stuff like an index buffer:
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+        // useShader() binds the targets so we can clear them here
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // glViewport(...) // we can set the viewport manually here if desired
+        
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, instances);
+
+        // actually draw to the screen
+        auto fragment = [&] {
+            uniform mat4 bind(worldToLight);
+            uniform float bind(t);
+            in vec3 col, p;
+            // samplers are bound just like any uniform
+            // remember, depth is in the x channel only.
+            uniform sampler2D bind(color, normal, depth);
+
+            // if we don't bind the output, we always write to the screen and can choose any variable name.
+            out vec3 out_color;
+
+            void glsl_main() {
+                vec3 n = normalize(cross(dFdx(p), dFdy(p)));
+
+                // compute the light space coordinate of our screen fragment
+                vec4 lNDC = worldToLight * vec4(p, 1.f);
+                lNDC.xyz = (lNDC.xyz/lNDC.w)*.5f+.5f;
+
+                float shadow = .0f;
+                vec3 scatter = vec3(.0f);
+
+                // a different seed for each pixel every frame
+                srnd(uint(gl_FragCoord.x) + 1280 * uint(gl_FragCoord.y) + floatBitsToUint(t));
+
+                // loop for shadow filtering and the shadow map based subsurface scattering
+                for (int i = 0; i < 8; ++i) {
+                    vec2 jitter = (vec2(rnd(), rnd()) - .5f) / vec2(textureSize(depth, 0))*2.f;
+                    // difference between shadow map and current fragment depth from the light
+                    float penetration = texture(depth, lNDC.xy + jitter).x - lNDC.z;
+                    // shadow mapping
+                    if (penetration > -.001f)
+                        shadow += 1.f;
+                    // scattering
+                    if (col.b < .2f) {
+                        float irradiance = max(.0f, dot(texture(normal, lNDC.xy + jitter).xyz, ldir));
+                        vec3 optical_length = 60.f * penetration / texture(color, lNDC.xy + jitter).xyz;
+                        scatter += .2f * col * irradiance * exp(min(vec3(.0f), optical_length));
+                    }
+                }
+                shadow /= 8.f;
+                scatter /= 8.f;
+
+                // reflective shadow mapping: each shadow map texel is treated as a virtual point light (VPL) and
+                // the total contribution of all VPLs is stochastically evaluated by taking the average
+                // of the colors of a set of random trials. to simplify things, we don't care if the current
+                // fragment and the VPL are actually mutually visible or not
+                vec3 indirect = vec3(.0f);
+                for (int i = 0; i < 16; ++i) {
+                    // pick a texel
+                    float angle = rnd() * 2.f * pi;
+                    vec2 offset = lNDC.xy+vec2(cos(angle), sin(angle)) * sqrt(float(i) + rnd())*.02f;
+
+                    // backproject the VPL location
+                    vec4 vpl_pos = inverse(worldToLight)*vec4(offset*2.f-1.f, texture(depth, offset).x*2.f-1.f, 1.0f);
+                    vpl_pos.xyz /= vpl_pos.w;
+                    vec3 diff = p - vpl_pos.xyz;
+
+                    // read normal and color of VPL
+                    vec3 vpl_normal = texture(normal, offset).xyz;
+                    vec3 vpl_col = texture(color, offset).xyz;
+                    
+                    // limit the normalization factor to avoid bright splotches
+                    float lensq = max(dot(diff, diff), .4f);
+
+                    // the geometric term between the VPL and the receiver
+                    diff = normalize(diff);
+                    float G = max(.0f, dot(-diff, n)) * max(.0f, dot(diff, vpl_normal)) / lensq;
+                    indirect += col * vpl_col * G;
+                }
+                indirect /= 16.f;
+
+                vec3 direct = shadow * col * max(.0f, dot(n, ldir));
+                out_color = direct + indirect + scatter;
+            }
+        };
+
+        // set up the shader and draw
+        useShader(vertex(worldToClip), fragment());
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, instances);
+
+        // show the frame and clear the screen
+        swapBuffers();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+}
+```
+
+That's it! The tour is over; that's how you use ssgl. Below is a reference with slightly longer explanations and a couple of more obscure features that we skipped.
 
 ## reference
 
@@ -251,7 +457,7 @@ This is a listing of all the types and macros in single source gl.
 
 The `bind` macros significantly reduce boiler plate code around drawcalls.
 
-```
+```C++
 bind(uniform_1, uniform_2, ...)
 uniform float bind(a, b, c);
 
@@ -271,7 +477,7 @@ uniform bind_block(buff) { /*UBO contents*/ };
 
 The `bind` macro family is the main difference in single source gl to typical shader programming. Instead of declaring values to be passed directly, we'll use the corresponding macro: `bind` for uniforms, `bind_attribute` for vertex attributes, `bind_target` for render targets, `bind_depth` for depth maps, and `bind_block` for SSBOs and UBOs. These take the object or value in the scope above and pass it to the shader **with the same name**, so there's no need to specify any indices or explicitly match objects to their names. The implementation relies on variable shadowing to produce a correctly typed local object; as such, you cannot just pass the object as a differently named argument. If you wish to call the same shader with multiple objects, you should place it in a function where the argument name is used as the name of the object:
 
-```
+```C++
 Shader wrapper(Buffer b) {
     return [&] {
         buffer bind_block(b) {/*whatever b contains*/};
@@ -283,7 +489,7 @@ which can now be set as the current shader with `useShader(wrapper(any_buffer))`
 
 Note that some of the `bind` macros can take multiple arguments: this is purely a convenience feature, you can also declare each (for example) uniform in its own statement. As usual, to be able to declare the objects on the same line, they'll need to be of the same type.
 
-```
+```C++
 dynamic_array(type, name)
 ```
 Since flexible arrays inside unions are not valid C++, an SSBO can't contain an array of the form `type name[]`; this GLSL construct is replaced by this macro. With some compilers you can use the GLSL syntax, but this doesn't let you query the length of the array; using `dynamic_array(type, name)` you can call `name.length()` in the shader, just as you typically would in GLSL.
@@ -292,7 +498,7 @@ Since flexible arrays inside unions are not valid C++, an SSBO can't contain an 
 
 single source gl also lets you use functions and variables declared outside of the shader scope.
 
-```
+```C++
 glsl_function
 inline glsl_function float test() {return .0f;}
 glsl_global
@@ -301,14 +507,14 @@ static glsl_global uint random_seed = 0;
 
 These two are straight forward, but very useful. `glsl_function` lets you write a function in the global scope, and makes it visible to both CPU and GPU side code. The system also supports includes, so you can place your functions in a header. Note that any specifiers before `glsl_function` are ignored, as the `inline` in the example above. `glsl_global` is basically the same, but introduces variables instead of functions. This is useful for global values such as mathematical constants and state required by global functions (GLSL doesn't have a static keyword, so for example random seeds have to be stored this way.)
 
-```
+```C++
 return_type glsl_func(name)(arguments) {/*function body*/};
 float glsl_func(twice)(float x) {return 2.f * x;};
 ```
 
 `glsl_func` is almost the same as `glsl_function`, but is for functions inside the shader body. Since C++ doesn't support local functions, this actually maps to a lambda; notice the necessary semicolon after the function body. This is most convenient when you want to, for example, read from an SSBO in a specific way multiple times and want to wrap the read in a function -- you can't pass an SSBO to a function in GLSL and you won't have access to one on the global scope, so a local function is necessary. (Note that actually reading from an SSBO in a `glsl_func` requires the newest version of VS2022 and compiling as c++20, older ones will give an "internal compiler error"; other compilers are fine with it.)
 
-```
+```C++
 arg_in(type)
 arg_out(type)
 arg_inout(type)
@@ -319,20 +525,20 @@ These macros are used to wrap `out` and `inout` argument types for `glsl_functio
 
 ### wrapper types
 
-```
+```C++
 struct OpenGL;
 Opengl(width, height, title, fullscreen, show);
 ```
 `OpenGL` is a RAII wrapper for an OpenGL context; constructing the object opens a context and makes it current, and . The constructor takes the parameters of the window: its size and title, if it's fullscreen, and if it should be shown at all. The last option is to support CLI programs where you don't want a window at all.
 
-```
+```C++
 struct Buffer;
 template<GLenum target> struct Texture;
 ```
 
 `Buffer` and `Texture` are RAII wrappers for OpenGL buffers and textures. They store a single object at a time and destroy it when the lifetime ends (similar to `unique_ptr`), or the object is replaced. The object is automatically constructed if no arguments are given, and the objects are implicitly convertible to their underlying GLuint values; so for example, you can pass a `Buffer` to `glNamedBufferStorage` to set up its storage. The type is also used to deduce bindings, so using these classes is required for the shader system to work. If you wish to track your lifetimes manually or with some other system, you can construct a non-owning `Buffer` or `Texture` by just passing the `GLuint` to the constructor (or the `GLuint` and `true` to pass ownership to the class). The `target` in `Texture` refers to the texture target (such as `GL_TEXTURE_2D`) -- to write a generic function that can take in any type, you should use `Texture<>` which stores the target dynamically.
 
-```
+```C++
 template<GLenum target>
 Texture<> Level(const Texture<target>& t, int level);
 template<GLenum target>
@@ -341,7 +547,7 @@ Texture<> Layer(const Texture<target>& t, int layer);
 
 `Level` and `Layer` take the MIP level or the 2D layer of the given `Texture`, and return a corresponding dynamically-targeted texture. This is so it's possible to write a shader that operates on a 2D texture, and pass in a specific MIP level or a layer of a 3D texture.
 
-```
+```C++
 template<typename T>
 struct Attribute;
 // to construct:
@@ -352,7 +558,7 @@ Attribute(const Buffer& b, int stride, int offset = 0, GLuint type = -1, bool no
 
 ### misc
 
-```
+```C++
 void useShader(const Shader& compute);
 void useShader(const Shader& vertex, const Shader& fragment);
 void useShader(const Shader& vertex, const Shader& geometry, const Shader& fragment);
@@ -361,7 +567,7 @@ void useShader(const Shader& vertex, const Shader& geometry, const Shader& contr
 ```
 `useShader` basically replaces `glUseProgram()` and most of the binding code. You give it the shaders corresponding to the shader stages you require. The OpenGL side shader programs themselves are cached, so compilation only happens on the first call to that specific combination of shaders.
 
-```
+```C++
 bool loop();
 void swapBuffers();
 void setTitle(const char* title);
@@ -379,7 +585,7 @@ ivec2 windowSize();
 ```
 These functions manage the window. Calling them might do something weird if there's no OpenGL context active. Going in order, `loop()` handles window messages and returns false if the program should quit (so your default main loop should be `while(loop())`). `swapBuffers()` presents the rendered frame from the default framebuffer on the screen. `setTitle()` changes the window title. `showWindow()` and `hideWindow()` make the window appear and disappear. `keyDown()` returns if the given key is currently held down, and `keyHit()` if it's been pressed down during this frame. `resetHits()` (automatically called by `loop()`) resets key hit status. `getMouse()` gets screen-relative mouse location in pixels (origin is top left of the window, x is to the right and y is down). `setMouse()` warps the pointer to the desired pixel (coordinates match `getMouse()`). `windowSize()` gets the current window resolution.
 
-```
+```C++
 glsl_extension(name, behavior)
 glsl_version(version)
 ```
