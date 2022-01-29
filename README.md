@@ -2,7 +2,7 @@
 
 single source gl (ssgl) lets you prototype GLSL shaders as C++ lambdas that automatically capture shader inputs and outputs. This unifies code, brings powerful C++ tools into shader development, and removes code that just passes objects around. All of this makes it extremely fast to try out ideas and iterate on them.
 
-To illustrate, the following is a program that uses a compute shader to fill a buffer with a running count. Note how the whole program sits in a single file, and how calling `useShader` is all that's required to set up the drawcall. The shader is the lambda `fill`, and the main body of the shader is in `glsl_main`. `useShader` sets up the program and binds the buffer as instructed by the `bind_block` macro.
+To illustrate, the following is a program that uses a compute shader to fill a buffer with a running count. Note how the whole program sits in a single file, and calling `useShader` is all that's required to set up the drawcall. The shader is the lambda `fill`, and the main body of the shader is in `glsl_main`. `useShader` sets up the program and binds the buffer as instructed by the `bind_block` macro.
 ```C++
 #include <vector>
 #include "ssgl.h"
@@ -61,7 +61,7 @@ The implementation is split into two folders: `impl` contains everything you nee
 - [examples](#examples)
     - [simple compute shader](#simple-compute-shader)
     - [rotating rgb triangle](#rotating-rgb-triangle)
-    - [Simple global illumination and subsurface scattering](#simple-global-illumination-and-subsurface-scattering)
+    - [simple global illumination and subsurface scattering](#simple-global-illumination-and-subsurface-scattering)
     - [Shadertoy adapter](#shadertoy-adapter)
 - [reference](#reference)
     - [bind macros](#bind-macros)
@@ -249,7 +249,7 @@ Crucially, there are no Vertex Array Objects (VAO) or Framebuffer Objects (FBO).
 
 Also notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They get removed before compiling the shader so no GLSL compiler gets confused. It's not strictly necessary but good practice to use the `f`s, since it keeps the C++ compiler from emitting loads of warnings about conversions between `float` and `double`.
 
-### Simple global illumination and subsurface scattering
+### simple global illumination and subsurface scattering
 
 ![image](https://user-images.githubusercontent.com/1880715/151415036-80650b16-c8c0-4229-ad4f-9f2407a14e93.png)
 
