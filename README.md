@@ -59,21 +59,21 @@ The implementation is split into two folders: `impl` contains everything you nee
 
 ## documentation
 - [examples](#examples)
-    - [simple compute shader](#simple)
-    - [rotating rgb triangle](#rgbtriangle)
-    - [Simple global illumination and subsurface scattering](#gisss)
-    - [Shadertoy adapter](#shadertoy)
-- [reference](#references)
-    - [bind macros](#binds)
-    - [global values and functions](#globals)
-    - [wrapper types](#wrappers)
+    - [simple compute shader](#simple-compute-shader)
+    - [rotating rgb triangle](#rotating-rgb-triangle)
+    - [Simple global illumination and subsurface scattering](#simple-global-illumination-and-subsurface-scattering)
+    - [Shadertoy adapter](#shadertoy-adapter)
+- [reference](#reference)
+    - [bind macros](#bind-macros)
+    - [global values and functions](#global-values-and-functions)
+    - [wrapper types](#wrapper-types)
     - [misc](#misc)
 
 ## examples
 
 Let's look at a few usage examples in more detail. This is not a tutorial on C++, GPU programming, or graphics, so a certain level of proficiency in each is expected. The interest is not in what we compute, but how we do it. Focusing on form over function here will let you do the opposite in your actual projects.
 
-### simple compute shader {#simple}
+### simple compute shader
 
 ![](https://user-images.githubusercontent.com/1880715/150009227-71b83b32-0033-4e7b-aa08-79465e41e135.png)
 
@@ -147,7 +147,7 @@ If you wish to edit properties of the shader manually, you can do so between `us
 You should **not** store the `Shader` object returned by a shader lambda: call the lambda every time you call `useShader()`. The values of the binds are updated by calling the lambda, so using the old `Shader` might mess things up when objects change names or names change objects.
 
 
-### rotating rgb triangle {#rgbtriangle}
+### rotating rgb triangle
 
 ![](https://user-images.githubusercontent.com/1880715/150008489-79662388-f997-4f29-b10a-48279413fc9b.png)
 
@@ -249,7 +249,7 @@ Crucially, there are no Vertex Array Objects (VAO) or Framebuffer Objects (FBO).
 
 Also notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They get removed before compiling the shader so no GLSL compiler gets confused. It's not strictly necessary but good practice to use the `f`s, since it keeps the C++ compiler from emitting loads of warnings about conversions between `float` and `double`.
 
-### Simple global illumination and subsurface scattering {#gisss}
+### Simple global illumination and subsurface scattering
 
 ![image](https://user-images.githubusercontent.com/1880715/151415036-80650b16-c8c0-4229-ad4f-9f2407a14e93.png)
 
@@ -461,7 +461,7 @@ int main() {
 
 That's it! The tour is over; that's how you use ssgl. Towards the bottom of this document is a reference with slightly longer explanations and a couple of more obscure features that we skipped.
 
-### Shadertoy adapter {#shadertoy}
+### Shadertoy adapter
 
 ![image](https://user-images.githubusercontent.com/1880715/151568002-1718ca77-b7f1-49c8-870a-7580c63d669f.png)
 
@@ -551,11 +551,11 @@ int main() {
 }
 ```
 
-## reference {#references}
+## reference
 
 This is a listing of all the types and macros in single source gl.
 
-### bind macros {#binds}
+### bind macros
 
 The `bind` macros significantly reduce boiler plate code around drawcalls.
 
@@ -596,7 +596,7 @@ dynamic_array(type, name)
 ```
 Since flexible arrays inside unions are not valid C++, an SSBO can't contain an array of the form `type name[]`; this GLSL construct is replaced by this macro. With some compilers you can use the GLSL syntax, but this doesn't let you query the length of the array; using `dynamic_array(type, name)` you can call `name.length()` in the shader, just as you typically would in GLSL.
 
-### global values and functions {#globals}
+### global values and functions
 
 single source gl also lets you use functions and variables declared outside of the shader scope.
 
@@ -625,7 +625,7 @@ glsl_function void test(arg_in(float) a, arg_out(int) b, arg_inout(mat4) c) {}
 
 These macros are used to wrap `out` and `inout` argument types for `glsl_function`s and `glsl_func`s; `arg_in` should not be necessary but is provided for completeness' sake. This form is required to allow using proper out/inout arguments on both the CPU and the GPU.
 
-### wrapper types {#wrappers}
+### wrapper types
 
 ```C++
 struct OpenGL;
@@ -658,7 +658,7 @@ Attribute(const Buffer& b, int stride, int offset = 0, GLuint type = -1, bool no
 
 `Attribute` is an adapter for vertex buffers: it's where you define how the buffer is read to produce vertex inputs. The template argument `T` is the shader-side type of the attribute. The only things you can do with `Attribute` instances are construct them and bind them to shaders. In the constructor you specify the buffer to be read, and all of the information typically given to `glVertexAttribPointer`. The type of the attribute is typically determined by the template argument, but for example a vec3 attribute can be backed up by `GL_BYTE` data, so you can also give the type manually.
 
-### misc {#misc}
+### misc
 
 ```C++
 void useShader(const Shader& compute);
