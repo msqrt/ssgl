@@ -69,7 +69,7 @@ The implementation is split into two folders: `impl` contains everything you nee
     - [wrapper types](#wrappers)
     - [misc](#misc)
 
-## examples {#examples}
+## examples
 
 Let's look at a few usage examples in more detail. This is not a tutorial on C++, GPU programming, or graphics, so a certain level of proficiency in each is expected. The interest is not in what we compute, but how we do it. Focusing on form over function here will let you do the opposite in your actual projects.
 
