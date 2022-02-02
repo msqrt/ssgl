@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "clang-cl Debug",
+            "type": "shell",
+            "command": "clang-cl",
+            "args": [
+                "main.cpp",
+                "impl/gl_helpers.cpp", "impl/inline_glsl.cpp",
+                "utils/window.cpp", "utils/loadgl46.cpp", "utils/mesh.cpp",
+                "/Z7",
+                "/EHsc",
+                "/MTd",
+                "/std:c++17",
+                "/Iimpl",
+                "/Iutils",
+                "/Od",
+                "/o", "build/debug",
+                "/link", "User32.lib", "Gdi32.lib"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
