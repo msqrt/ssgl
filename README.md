@@ -249,6 +249,8 @@ Crucially, there are no Vertex Array Objects (VAO) or Framebuffer Objects (FBO).
 
 Also notice how we use `f` postfixes for `float`s like C++ and unlike GLSL. They get removed before compiling the shader so no GLSL compiler gets confused. It's not strictly necessary but good practice to use the `f`s, since it keeps the C++ compiler from emitting loads of warnings about conversions between `float` and `double`.
 
+It's important to keep in mind that the hot reload feature only works for the parts of the shader that run on the GPU; notably, input and output binds do **not** update live. This is because the `bind` macros work by producing OpenGL code on the C++ side, and this changes only when the project is recompiled. However, global functions (even ones from headers) do update whenever their containing file is saved.
+
 ### simple global illumination and subsurface scattering
 
 ![image](https://user-images.githubusercontent.com/1880715/151415036-80650b16-c8c0-4229-ad4f-9f2407a14e93.png)
