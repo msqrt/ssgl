@@ -351,14 +351,24 @@ namespace inline_glsl {
         }
         for (char* c : glsl_functions) {
             if (*c == '#') {
-                while (*c!='\n' && *c!='\0') c++;
+                while (*c != '\n' && *c != '\0') c++;
                 *c = '\0';
                 continue;
             }
             while (*c != ';' && *c != '{' && *c != '(' && *c != '\0') c++;
-            if (*c == '{') while (*c != ';' && *c != '\0') c++;
-            if (*c == ';') *(c + 1) = '\0';
+            if (*c == '{') {
+                c++;
+                // struct
+                int inside = 1;
+                while (inside>0 && *c != '\0') {
+                    if (*c == '{') inside++;
+                    if (*c == '}') inside--;
+                    c++;
+                }
+            }
+            if (*c == ';') *(c + 1) = '\0'; // variable
             else {
+                // function
                 c++;
                 int inside = 1;
                 while (inside > 0 && *c!='\0') {
