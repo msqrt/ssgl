@@ -1,6 +1,7 @@
 Debug
 x64
 .vs
+build
 *.filters
 *.user
 *.bin
