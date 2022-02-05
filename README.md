@@ -81,58 +81,58 @@ We'll first go through the simple compute shader already shown above. There are 
 
 ```C++
 #include <vector>
- // include ssgl.h last; it defines many iffy macros that will break some other headers
+// include ssgl.h last; it defines many iffy macros that will break some other headers
 #include "ssgl.h"
 
 int main() {
     
-    // an OpenGL object creates and stores a window and its OpenGL context;
+    // An OpenGL object creates and stores a window and its OpenGL context;
     // after it goes out of scope, OpenGL is released and the window destroyed.
     OpenGL context(640, 480, "iota_example", false, false);
     
-    // a Buffer creates and stores an OpenGL buffer object
-    // it's basically a std::unique_ptr but for an OpenGL object instead of system memory
+    // A Buffer creates and stores an OpenGL buffer object. It's similar to
+    // std::unique_ptr but for an OpenGL object instead of system memory.
     Buffer iota;
 
-    // the Buffer is implicitly castable to GLuint so you can use it with OpenGL functions
+    // a Buffer is implicitly castable to GLuint so you can use it with OpenGL functions:
     glNamedBufferData(iota, 1024 * 1024 * sizeof(uint32_t), nullptr, GL_STATIC_DRAW);
     
-    // the shader itself : do remember to capture everything with the &!
+    // The shader itself. Do remember to capture everything with the &!
     auto fill = [&] {
 
-        // this scope is the global scope of the shader; nothing can be executed here.
-        // instead, here we declare inputs, outputs, and parameters of the shader
+        // This scope is the global scope of the shader; nothing can be executed here.
+        // Instead, here we declare inputs, outputs, and parameters of the shader.
 
         // first, since this is a compute shader, we define the local workgroup size:
         layout (local_size_x = 256) in; // (this is standard GLSL syntax)
         
         // SSBOs and UBOs are bound using "bind_block", as their contents are defined
         // in a block following the declaration. bind_block takes the Buffer object
-        // with the same name ("iota") from the scope above and passes it to the shader
+        // with the same name ("iota") from the scope above and passes it to the shader.
         buffer bind_block(iota) {
-            // the GLSL dynamic array syntax ("uint result[];") is not legal C++ here.
+            // The GLSL dynamic array syntax ("uint result[];") is not legal C++ here,
             // so we define dynamic arrays like this instead:
             dynamic_array(uint, result);
         };
 
-        // we already have a main in C++, so we'll use "glsl_main" as the GLSL entry point
+        // We already have a main in C++, so we'll use "glsl_main" as the GLSL entry point:
         void glsl_main() {
-            // this is where the GPU will start running our code!
+            // This is where the GPU will start running our code!
 
-            // for this example, we'll write the index of the current thread to the array.
-            // GLSL programs can be arbitrarily complex, this is just for the sake of brevity
+            // For this example, we'll write the index of the current thread to the array.
+            // GLSL programs can be arbitrarily complex, this is just for the sake of brevity.
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
         }
     };
     
-    // useShader sets our shader as the current shader and binds all of the required objects
-    useShader(fill()); // note that we're *calling* the lambda here, not just passing it in!
+    // useShader sets our shader as the current shader and binds all of the required objects:
+    useShader(fill()); // Note that we're *calling* the lambda here, not just passing it in!
 
-    // this is the actual call to the shader. the arguments give the global size;
-    // the local size is defined in the shader and all other arguments are handled by useShader
+    // This is the actual call to the shader. The arguments give the global size;
+    // the local size is defined in the shader and all other arguments are handled by useShader.
     glDispatchCompute(1024*4, 1, 1);
     
-    // display results to check that something actually happened
+    // display some of the results to check that something actually happened
     std::vector<uint32_t> result(1024 * 1024);
     glGetNamedBufferSubData(iota, 0, sizeof(uint32_t) * result.size(), result.data());
     for (int i = 0; i<1024*1024; i+=64*1024)
@@ -158,8 +158,8 @@ This one is a classic OpenGL example. We'll use it to illustrate how vertex attr
 // the headers in this repo are built to respect ssgl.h, so order doesn't matter
 #include "gl_timing.h"
 
-// we use the keyword "glsl_function" to define global functions with GLSL support.
-// necessary C++ keywords and specifiers can be placed before "glsl_function"
+// We use the keyword "glsl_function" to define global functions with GLSL support.
+// Necessary C++ keywords and specifiers can be placed before "glsl_function".
 inline glsl_function mat2 get_rotation(float angle) {
     // get a 2D rotation matrix based on an angle (in radians)
     float c = cos(angle), s = sin(angle);
@@ -181,51 +181,52 @@ int main() {
     // send the vertices array to the GPU
     Buffer b; glNamedBufferData(b, sizeof(Vertex) * 3, verts, GL_STATIC_DRAW);
 
-    // set up attributes corresponding to the values. these are wrapper objects that act
+    // Here we set up attributes corresponding to the values. These are wrapper objects that act
     // as a view to the given Buffer; the arguments mostly match those of glVertexAttribPointer:
     // (buffer, stride, offset=0, type=-1, normalized=false), where typically stride is the size
     // of the vertex and offset is how many bytes into the struct the corresponding field is.
-    // the template argument of Attribute is the desired shader-side type; if this doesn't match
+    // The template argument of Attribute is the desired shader-side type; if this doesn't match
     // the data in the buffer (say, your data is uint8_t), you can manually override the type.
     Attribute<vec2> position(b, sizeof(Vertex), 0);
     Attribute<vec3> color(b, sizeof(Vertex), sizeof(vec2));
 
-    // stores both CPU- and GPU-side timing events (has some overhead, but OK for prototyping)
+    // TimeStamp stores both CPU- and GPU-side timing events so you can query the difference
+    // between two stamps. It has some overhead, but it's OK for testing and performance tuning.
     TimeStamp start;
 
-    // loop() is true while the window is open and ESC has not been pressed
+    // loop() returns true while the window is open and ESC has not been pressed
     while (loop()) {
         TimeStamp now;
-        // cpuTime() gets time in milliseconds between two stamps
-        // gpuTime() would get total render operation time between the stamps
+        // cpuTime() gets time in milliseconds between two stamps, whereas
+        // gpuTime() would get total render operation time between the stamps.
         float t = .001f*(float)cpuTime(start, now);
 
         // define the shaders
         auto vertex = [&] {
-            // uniforms are bound with bind(name), this means basic types (including vec* and mat*)
-            // and textures/images which are bound as uniforms
+            // Uniforms are bound with bind(name), this means basic types (including vec* and mat*)
+            // and textures/images which are bound as uniforms.
             uniform float bind(t);
-            // attributes are bound with bind_attribute; note that you don't bind the buffer directly!
-            in vec2 bind_attribute(position); // these do type checking; try changing the type to float
+            // Attributes are bound with bind_attribute; note that you don't bind the buffer directly!
+            in vec2 bind_attribute(position); // These do type checking; try changing the type!
             in vec3 bind_attribute(color);
             out vec3 col;
             void glsl_main() {
                 col = color;
                 
-                // shaders are hot reloadable!
-                // try changing "t" to "0.5f*t" or "-t" and saving the file while the program is running
+                // Shaders are hot reloadable! Try changing "t" to "0.5f*t" or "-t"
+                // and saving the file while the program is running.
                 float angle = t;
 
-                // here we call get_rotation() defined in the beginning
+                // Here we call get_rotation() defined in the beginning.
                 vec2 pos = get_rotation(angle)*position.xy;
                 
-                // GLSL's built-in variables are pre-defined
+                // GLSL's built-in variables are pre-defined:
                 gl_Position = vec4(pos*vec2(9.f/16.f,1.f), .0f, 1.f);
             }
         };
         auto fragment = [&] {
             in vec3 col;
-            // screen is a special texture output that writes to the window sufrace.
+            // Screen is a special texture output that writes to the window sufrace.
             out vec3 bind_target(screen);
             void glsl_main() {
                 // just output the interpolated value
@@ -284,14 +285,13 @@ int main() {
     glNamedBufferData(indexBuffer, sizeof(inds), inds, GL_STATIC_DRAW);
     Attribute<vec3> position(vertexBuffer, sizeof(vec3), 0);
 
-    // create textures to render to. for reflective shadow maps we need to have an
+    // Create textures to render to. For reflective shadow maps we need to have an
     // enriched shadow map with normal and color information.
     Texture<GL_TEXTURE_2D> color, normal, depth;
     glTextureStorage2D(color, 1, GL_RGB32F, 2048, 2048);
     glTextureStorage2D(normal, 1, GL_RGB32F, 2048, 2048);
     glTextureStorage2D(depth, 1, GL_DEPTH24_STENCIL8, 2048, 2048);
-
-    // start timing
+    
     TimeStamp start;
 
     int instances = 800;
@@ -307,9 +307,9 @@ int main() {
         mat4 worldToClip = perspective(.5f, 16.f/9.f, .1f, 30.f) * inverse(cameraToWorld);
         mat4 worldToLight = ortho(12.f, 1.f, -7.f, 7.f) * inverse(lookAt(ldir, vec3(.0f)));
 
-        // this vertex shader will be used for both the shadow map and the final pass,
+        // This vertex shader will be used for both the shadow map and the final pass,
         // but with different matrices; for this to work, we have to rename the input
-        // by passing it as an argument. as the shaders themselves can only capture
+        // by passing it as an argument. As the shaders themselves can only capture
         // inputs, we need to introduce an extra scope, here done by wrapping the shader
         // in an outer generator lambda.
         auto vertex = [&](mat4 matrix) {
@@ -350,13 +350,13 @@ int main() {
         };
         // the first fragment shader will populate the shadow maps (with color+normal instead of just depth)
         auto lightFragment = [&] {
-            // it's up to the user to make sure that the render target sizes match;
+            // It's up to the user to make sure that the render target sizes match;
             // viewport will be set to (0,0,w,h) automatically.
             out vec3 bind_target(color, normal);
-            out float bind_depth(depth); // we could also write to depth manually, but this is not necessary
+            out float bind_depth(depth); // you can write to this, default is the rasterized depth
             in vec3 col, p;
             void glsl_main() {
-                // just write the outputs
+                // just copy the outputs
                 color = col;
                 normal = normalize(cross(dFdx(p), dFdy(p)));
             }
@@ -364,11 +364,14 @@ int main() {
 
         // set up the shader and draw
         useShader(vertex(worldToLight), lightFragment());
-        // here's the time to setup extra stuff like an index buffer:
+        
+        // Here's the time to setup extra stuff like an index buffer:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-        // useShader() binds the targets so we can clear them here
+        
+        // useShader() binds the targets so we can clear them here:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // glViewport(...) // we can set the viewport manually here if desired
+        
+        // glViewport(...) // we could set the viewport manually here if desired
         
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, instances);
 
@@ -377,11 +380,12 @@ int main() {
             uniform mat4 bind(worldToLight);
             uniform float bind(t);
             in vec3 col, p;
-            // samplers are bound just like any uniform
-            // remember, depth is in the x channel only.
+            // Samplers are bound just like any uniform.
+            // Remember, depth is in the x channel only.
             uniform sampler2D bind(color, normal, depth);
 
-            // if we don't bind the output, we always write to the screen and can choose any variable name.
+            // If we don't bind the output, we always write to the screen and can choose any variable name.
+            // Using the "screen" target seems somewhat cleaner, but this is also an option.
             out vec3 out_color;
 
             void glsl_main() {
@@ -405,7 +409,7 @@ int main() {
                     // shadow mapping
                     if (penetration > -.001f)
                         shadow += 1.f;
-                    // scattering
+                    // Scattering: Beer's law and a bunch of magic constants.
                     if (col.b < .2f) {
                         float irradiance = max(.0f, dot(texture(normal, lNDC.xy + jitter).xyz, ldir));
                         vec3 optical_length = 60.f * penetration / texture(color, lNDC.xy + jitter).xyz;
@@ -415,10 +419,10 @@ int main() {
                 shadow /= 8.f;
                 scatter /= 8.f;
 
-                // reflective shadow mapping: each shadow map texel is treated as a virtual point light (VPL) and
+                // Reflective shadow mapping: each shadow map texel is treated as a virtual point light (VPL) and
                 // the total contribution of all VPLs is stochastically evaluated by taking the average
-                // of the colors of a set of random trials. to simplify things, we don't care if the current
-                // fragment and the VPL are actually mutually visible or not
+                // of the colors of a set of random trials. To make this fast, we don't care if the current
+                // fragment and the VPL are actually mutually visible or not.
                 vec3 indirect = vec3(.0f);
                 for (int i = 0; i < 16; ++i) {
                     // pick a texel
@@ -481,7 +485,7 @@ glsl_global float     iTimeDelta;            // render time (in seconds)
 glsl_global int       iFrame;                // shader playback frame
 glsl_global vec4      iMouse;                // mouse pixel coords. xy: current (if MLB down), zw: click (actually spacebar)
 
-// shadertoy goes here:
+// Shadertoy goes here:
 glsl_function void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
     // Normalized pixel coordinates (from 0 to 1)
