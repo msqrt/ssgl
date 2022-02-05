@@ -633,7 +633,7 @@ These macros are used to wrap `out` and `inout` argument types for `glsl_functio
 struct OpenGL;
 Opengl(width, height, title, fullscreen, show);
 ```
-`OpenGL` is a RAII wrapper for an OpenGL context; constructing the object opens a context and makes it current, and . The constructor takes the parameters of the window: its size and title, if it's fullscreen, and if it should be shown at all. The last option is to support CLI programs where you don't want a window at all.
+`OpenGL` is a RAII wrapper for an OpenGL context; constructing the object opens a context and makes it current, and it remains current until the object is destructed, at which point both the OpenGL context and the window are destroyed. The constructor takes the parameters of the window: its size and title, if it's fullscreen, and if it should be shown at all. The last option is to support CLI programs where you don't want a window at all.
 
 ```C++
 struct Buffer;
