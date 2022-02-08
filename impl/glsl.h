@@ -1,6 +1,6 @@
 #pragma once
 
-// #define GLSL_STANDARD_COMPLIANT // define this to make the swizzle unions not rely on floats having no padding and anonymous structs inside anonymous unions (beware: this means &a.x==&a.y and so on)
+// #define GLSL_STANDARD_COMPLIANT // define this to make the swizzle unions not rely on anonymous structs inside anonymous unions, which are widely supported but non-standard. beware: this means &a.x==&a.y and so on. (otherwise it would be the default.)
 
 namespace glsl {
 
