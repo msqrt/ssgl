@@ -931,6 +931,11 @@ namespace glsl {
         else return M(a.data[I] % b.data[I] ...);
     }
     template<typename M, int... I>
+    inline auto bin_neg(const M& a, sequence<I...>) {
+        if constexpr (sizeof...(I) == 1) return -a;
+        else return M(~a.data[I] ...);
+    }
+    template<typename M, int... I>
     inline auto lshift(const M& a, const M& b, sequence<I...>) {
         if constexpr (sizeof...(I) == 1) return a << b;
         else return M(a.data[I] << b.data[I] ...);
@@ -1204,7 +1209,7 @@ namespace glsl {
         return sub(Common<genType, genType_>(x), Common<genType, genType_>(y), Iota<genType, genType_>{});
     }
 
-    template<typename genType, typename = enable<(Rows<genType> > 1) && broadcastable<genType>>>
+    template<typename genType, typename = enable<(Rows<genType> > 1)>>
     inline auto operator-(const genType& x) {
         return neg(identity<Rows<genType>, Columns<genType>, Field<genType>>(x), iota<Rows<genType>* Columns<genType>>{});
     }
@@ -1217,6 +1222,10 @@ namespace glsl {
     template<typename genType, typename genType_, typename = enable<(Rows<genType> > 1 || Rows<genType_> > 1) && broadcastable<genType, genType_> && moddable<Field<genType>, Field<genType_>>> >
     inline auto operator%(const genType& x, const genType_& y) {
         return mod(Common<genType, genType_>(x), Common<genType, genType_>(y), Iota<genType, genType_>{});
+    }
+    template<typename genType, typename = enable<(Rows<genType> > 1) && integral<Field<genType>>>>
+    inline auto operator~(const genType& x) {
+        return bin_neg(identity<Rows<genType>, Columns<genType>, Field<genType>>(x), iota<Rows<genType>* Columns<genType>>{});
     }
     template<typename genType, typename genType_, typename = enable<(Rows<genType> > 1 || Rows<genType_> > 1) && broadcastable<genType, genType_>&& moddable<Field<genType>, Field<genType_>>> >
     inline auto operator<<(const genType& x, const genType_& y) {
