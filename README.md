@@ -19,7 +19,7 @@ int main() {
     auto fill = [&] {
         layout (local_size_x = 256) in;
         buffer bind_block(iota) {
-            dynamic_array(uint, result); // replacement for "uint result[];"
+            uint result[];
         };
         void glsl_main() {
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
