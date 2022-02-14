@@ -1,6 +1,6 @@
 # single source gl
 
-single source gl (ssgl) lets you prototype GLSL shaders as C++ lambdas that automatically capture shader inputs and outputs. This unifies code, brings powerful C++ tools into shader development, and removes code that just passes objects around. All of this makes it extremely fast to try out ideas and iterate on them.
+single source gl (ssgl) lets you write GLSL shaders as C++ lambdas that automatically capture shader inputs and outputs. This unifies code, brings powerful C++ tools into shader development, and removes code that just passes objects around. All of this makes it extremely fast to prototype ideas and iterate on them.
 
 To illustrate, the following is a program that uses a compute shader to fill a buffer with a running count. Note how the whole program sits in a single file, and calling `useShader` is all that's required to set up the drawcall. The shader is the lambda `fill`, and the main body of the shader is in `glsl_main`. `useShader` sets up the program and binds the buffer as instructed by the `bind_block` macro.
 ```C++
@@ -19,7 +19,7 @@ int main() {
     auto fill = [&] {
         layout (local_size_x = 256) in;
         buffer bind_block(iota) {
-            dynamic_array(uint, result); // replacement for "uint result[];"
+            uint result[];
         };
         void glsl_main() {
             result[gl_GlobalInvocationID.x] = gl_GlobalInvocationID.x;
@@ -53,9 +53,9 @@ Since the code is C++ under the hood, IDE features like Intellisense work proper
 
 To be clear, the project is **not** about adding C++ features to shaders, or being able to run shaders on the CPU (even though the latter is possible to an extent). All of the shader code will be standard GLSL and run on the GPU. The point is that GLSL now sits within C++, improving the development experience by making shaders nicer to write and reducing the need for uninteresting code.
 
-The project is written against C++17 and OpenGL 4.6. The C++17 features are strictly necessary, but OpenGL could be ported back at least to 3.0 -- the main hurdle would be to convert all DSA code to the old model.
+The project is written against C++17 and OpenGL 4.6. The C++17 features are strictly necessary, but OpenGL could be ported back at least to 3.0 -- the main hurdle would be to convert all DSA code to the old model. This will happen at some point to enable Mac and potentially OpenGL ES support.
 
-The implementation is split into two folders: `impl` contains everything you need for the library to work, and that's all you need if you want to use your own windowing/OpenGL environment. `utils` contains some extra helpers and a sample windowing/GL extension loading system to keep the repository self-contained. On Linux, this windowing system requires GLFW 3. A Visual Studio project and a Makefile are provided, there's also a rudimentary VSCode setup but that's still work in progress.
+The implementation is split into two folders: `impl` contains everything you need for the library to work, and that's all you need if you want to use your own windowing/OpenGL environment. `utils` contains some extra helpers and a sample windowing/GL extension loading system to keep the repository self-contained. On Linux, this windowing system requires GLFW 3. A Visual Studio project and a Makefile are provided, there's also a rudimentary VSCode setup that's still work in progress but should get you started.
 
 ## documentation
 - [examples](#examples)
