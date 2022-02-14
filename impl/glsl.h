@@ -1734,7 +1734,7 @@ template<typename genType> genType fwidthFine(genType p) { return p; }
 
 // subgroup extension: see https://www.khronos.org/blog/vulkan-subgroup-tutorial
 
-inline const uint gl_NumSubgroups = 1, gl_SubgroupID = 0, gl_SubgroupSize = 128, gl_subgroupInvocationID = 0;
+inline const uint gl_NumSubgroups = 1, gl_SubgroupID = 0, gl_SubgroupSize = 128, gl_SubgroupInvocationID = 0;
 inline const uint gl_SubgroupEqMask = 0, gl_SubgroupGeMask = 0, gl_SubgroupGtMask = 0, gl_SubgroupLeMask = 0, gl_SubgroupLtMask = 0;
 inline void subgroupBarrier() {}
 inline void subgroupMemoryBarrier() {}
