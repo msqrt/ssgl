@@ -7,12 +7,31 @@
 
 #include "loadgl46.h"
 
+#include <vector>
 // RAII lifetime handlers for GLuint-based buffers and textures; in principle, very close to unique pointers (with GLuint playing the role of a raw pointer).
 
 struct Buffer {
 public:
 	void destroy() { if (object != 0 && owning) { glDeleteBuffers(1, &object); object = 0; } }
 	Buffer() : owning(true) { glCreateBuffers(1, &object); }
+	Buffer(size_t size, GLenum usage = GL_STATIC_DRAW) : owning(true) {
+		glCreateBuffers(1, &object);
+		glNamedBufferData(object, size, nullptr, usage);
+	}
+	template<typename T>
+	Buffer(const std::vector<T>& v, GLenum usage = GL_STATIC_DRAW) : owning(true) {
+		glCreateBuffers(1, &object);
+		glNamedBufferData(object, v.size()*sizeof(T), v.data(), usage);
+	}
+	template<typename T>
+	operator std::vector<T>() const {
+		GLint64 size;
+		glGetNamedBufferParameteri64v(object, GL_BUFFER_SIZE, &size);
+		if (size % sizeof(T)) printf("warning: buffer and vector types don't align");
+		std::vector<T> result(size/sizeof(T));
+		glGetNamedBufferSubData(object, 0, result.size()*sizeof(T), result.data());
+		return result;
+	}
 	~Buffer() { destroy(); }
 	Buffer(const Buffer& other) : object(other.object), owning(false) { }
 	Buffer(GLuint object, bool owning = false) : object(object), owning(owning) { }
