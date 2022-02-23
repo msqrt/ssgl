@@ -1360,12 +1360,12 @@ inline auto round(const genType& x) {
 
 template<typename genType, typename genType_, typename = glsl::enable<glsl::broadcastable<genType, genType_>>>
 inline auto mod(const genType& x, const genType_& y) {
-    return glsl::modulus(glsl::Common<genType>(x), glsl::Common<genType>(y), glsl::Iota<genType>{});
+    return glsl::modulus(glsl::Common<genType, genType_>(x), glsl::Common<genType, genType_>(y), glsl::Iota<genType, genType_>{});
 }
 
-template<typename genType, typename genType_, typename = glsl::enable<(1<glsl::Rows<genType> || 1<glsl::Rows<genType_> || (glsl::same<genType, float> && glsl::same<genType_, float>)) && glsl::broadcastable<genType, genType_>>>
+template<typename genType, typename genType_, typename = glsl::enable<(1<glsl::Rows<genType> || (glsl::same<genType, float> && glsl::same<genType_, float>)) && glsl::Rows<genType> == glsl::Rows<genType_>&& glsl::broadcastable<genType, genType_>>>
 inline auto pow(const genType& x, const genType_& y) {
-    return glsl::power(glsl::Common<genType>(x), glsl::Common<genType>(y), glsl::Iota<genType>{});
+    return glsl::power(glsl::Common<genType, genType_>(x), glsl::Common<genType, genType_>(y), glsl::Iota<genType, genType_>{});
 }
 
 
