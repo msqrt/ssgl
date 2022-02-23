@@ -52,3 +52,11 @@ inline glsl_function mat3 basis(vec3 n){
         vec3(b, sign + n.y * n.y * a, -n.y),
         n);
 }
+
+inline glsl_function vec3 srgb_to_linear(vec3 x) {
+    return mix(x / 12.92f, pow((x + .055f) / 1.055f, vec3(2.4f)), step(.04045f, x));
+}
+
+inline glsl_function vec3 linear_to_srgb(vec3 x) {
+    return mix(x * 12.92f, pow(x, vec3(1.f/2.4f))*1.055f - .055f, step(.0031308f, x));
+}
