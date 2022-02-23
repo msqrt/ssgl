@@ -28,7 +28,7 @@ void get_mesh(const char* filename, void* meshPtr, bool smooth) {
 	if (!filesystem::exists(path)) {
 
 		path.replace_extension(".mtl");
-		FILE* mtlFile = fopen(path.string().c_str(), "r");
+		FILE* mtlFile = fopen(path.string().c_str(), "rt");
 		fseek(mtlFile, 0, SEEK_END);
 		const size_t mtlSize = size_t(ftell(mtlFile)) + 1;
 
@@ -105,8 +105,7 @@ void get_mesh(const char* filename, void* meshPtr, bool smooth) {
 				while (objContents[i] == ' ' || objContents[i] == '\t') i++;
 				while(objContents[i]!='\n') {
 					sweep_inds[write_index].position = atoi(objContents.data() + i)-1;
-
-					while (objContents[i++] != '/');
+					while (objContents[i++] != '/') ;
 					if (objContents[i] != '/')
 						sweep_inds[write_index].uv = atoi(objContents.data() + i)-1;
 					while (objContents[i++] != '/');
@@ -201,6 +200,7 @@ void get_mesh(const char* filename, void* meshPtr, bool smooth) {
 			for (int j = 0; j < 3; ++j) {
 				ind_type ind = indices[i * 3 + j];
 				uint32_t index = mesh->indices[i * 3 + j] = ind.position;
+				if (index > mesh->vertex_count) continue;
 				mesh->verts[index].position = vec4(positions[ind.position], 1.f);
 				if(ind.uv<uvs.size())mesh->verts[index].uv = uvs[ind.uv];
 				if(ind.normal<normals.size())mesh->verts[index].normal = vec4(normals[ind.normal], 1.f);
