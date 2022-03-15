@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gl_helpers.h"
 #include <cstdio>
+#include "gl_helpers.h"
 
 template<GLenum type, typename T>
 struct Image {
