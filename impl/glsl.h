@@ -1027,13 +1027,13 @@ namespace glsl {
     }
     template<typename M, int... I>
     auto isnan(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return isnan(x);
-        else return Matrix<Rows<M>, 1, bool, I...>(isnan(x.data[I])...);
+        if constexpr (sizeof...(I) == 1) return std::isnan(x);
+        else return Matrix<Rows<M>, Columns<M>, bool, I...>(std::isnan(x.data[I])...);
     }
     template<typename M, int... I>
     auto isinf(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return isinf(x);
-        else return Matrix<Rows<M>, 1, bool, I...>(isinf(x.data[I])...);
+        if constexpr (sizeof...(I) == 1) return std::isinf(x);
+        else return Matrix<Rows<M>, Columns<M>, bool, I...>(std::isinf(x.data[I])...);
     }
 
     template<typename M, int... I>
@@ -1314,15 +1314,16 @@ auto notEqual(const genType& x, const genType_& y) {
     return glsl::neq(glsl::Common<genType, genType_>(x), glsl::Common<genType, genType_>(y), glsl::Iota<genType, genType_>{});
 }
 
-template<typename genType, typename = glsl::enable<glsl::same<glsl::Field<genType>, float>|| glsl::same<glsl::Field<genType>, double>>>
-inline auto isnan(const genType& x) {
+template<typename genType>
+inline auto isnan_(const genType& x) {
     return glsl::isnan(glsl::Common<genType>(x), glsl::Iota<genType>{});
 }
-template<typename genType, typename = glsl::enable<glsl::same<glsl::Field<genType>, float> || glsl::same<glsl::Field<genType>, double>>>
-inline auto isinf(const genType& x) {
+template<typename genType>
+inline auto isinf_(const genType& x) {
     return glsl::isinf(glsl::Common<genType>(x), glsl::Iota<genType>{});
 }
-
+#define isnan isnan_
+#define isinf isinf_
 
 template<typename genType, typename genType_, typename = glsl::enable<glsl::broadcastable<genType, genType_>> >
 inline auto max(const genType& x, const genType_& y) {
