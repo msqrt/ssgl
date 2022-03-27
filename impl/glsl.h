@@ -1038,33 +1038,33 @@ namespace glsl {
 
     template<typename M, int... I>
     inline auto ceiling(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return ceilf(float(x));
-        else return M(ceilf(float(x.data[I])) ...);
+        if constexpr (sizeof...(I) == 1) return std::ceil(float(x));
+        else return M(std::ceil(float(x.data[I])) ...);
     }
     template<typename M, int... I>
     inline auto flooring(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return floorf(float(x));
-        else return M(floorf(float(x.data[I])) ...);
+        if constexpr (sizeof...(I) == 1) return std::floor(float(x));
+        else return M(std::floor(float(x.data[I])) ...);
     }
     template<typename M, int... I>
     inline auto fraction(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return x - floorf(float(x));
-        else return M(x.data[I] - floorf(float(x.data[I])) ...);
+        if constexpr (sizeof...(I) == 1) return x - std::floor(float(x));
+        else return M(x.data[I] - std::floor(float(x.data[I])) ...);
     }
     template<typename M, int... I>
     inline auto rounder(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return roundf(float(x));
-        else return M(roundf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::round(float(x));
+        else return M(std::round(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto modulus(const M& x, const M& y, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return x - y * floorf(float(x / y));
-        else return M(x.data[I] - y.data[I] * floorf(float(x.data[I] / y.data[I])) ...);
+        if constexpr (sizeof...(I) == 1) return x - y * std::floor(float(x / y));
+        else return M(x.data[I] - y.data[I] * std::floor(float(x.data[I] / y.data[I])) ...);
     }
     template<typename M, int... I>
     inline auto power(const M& x, const M& y, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return powf(float(x), float(y));
-        else return M(powf(float(x.data[I]), float(y.data[I])) ...);
+        if constexpr (sizeof...(I) == 1) return std::pow(float(x), float(y));
+        else return M(std::pow(float(x.data[I]), float(y.data[I])) ...);
     }
     template<typename M, int... I>
     inline auto clamper(const M& x, const M& v, const M& V, sequence<I...>) {
@@ -1097,38 +1097,38 @@ namespace glsl {
     }
     template<typename M, int... I>
     inline auto sine(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return sinf(x);
-        else return M(sinf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::sin(x);
+        else return M(std::sin(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto arcussine(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return asinf(x);
-        else return M(asinf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::asin(x);
+        else return M(std::asin(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto cosine(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return cosf(x);
-        else return M(cosf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::cos(x);
+        else return M(std::cos(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto arcuscosine(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return acosf(x);
-        else return M(acosf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::acos(x);
+        else return M(std::acos(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto tangent(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return tanf(x);
-        else return M(tanf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::tan(x);
+        else return M(std::tan(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto arcustangent(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return atanf(x);
-        else return M(tanf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::atan(x);
+        else return M(std::tan(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto arcustangent(const M& y, const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return atan2f(y, x);
-        else return M(atan2f(y.data[I], x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::atan2(y, x);
+        else return M(std::atan2(y.data[I], x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto to_degrees(const M& x, sequence<I...>) {
@@ -1148,33 +1148,33 @@ namespace glsl {
     }
     template<typename M, int... I>
     inline auto len(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return fabsf(x);
-        else return sqrtf(((x.data[I] * x.data[I]) + ...));
+        if constexpr (sizeof...(I) == 1) return std::fabs(x);
+        else return std::sqrt(((x.data[I] * x.data[I]) + ...));
     }
     template<typename M, int... I>
     inline auto square_root(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return sqrtf(x);
-        else return M(sqrtf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::sqrt(x);
+        else return M(std::sqrt(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto exper(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return expf(x);
-        else return M(expf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::exp(x);
+        else return M(std::exp(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto exp2er(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return exp2f(x);
-        else return M(exp2f(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::exp2(x);
+        else return M(std::exp2f(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto loger(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return logf(x);
-        else return M(logf(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::log(x);
+        else return M(std::log(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto log2er(const M& x, sequence<I...>) {
-        if constexpr (sizeof...(I) == 1) return log2f(x);
-        else return M(log2f(x.data[I]) ...);
+        if constexpr (sizeof...(I) == 1) return std::log2(x);
+        else return M(std::log2(x.data[I]) ...);
     }
     template<typename M, int... I>
     inline auto signum(const M& x, sequence<I...>) {
