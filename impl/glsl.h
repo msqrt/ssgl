@@ -1,6 +1,6 @@
 #pragma once
 
-// #define GLSL_STANDARD_COMPLIANT // define this to make the swizzle unions not rely on anonymous structs inside anonymous unions, which are widely supported but non-standard. beware: this means &a.x==&a.y and so on. (otherwise it would be the default.)
+#define GLSL_STANDARD_COMPLIANT // define this to make the swizzle unions not rely on anonymous structs inside anonymous unions, which are widely supported but non-standard. beware: this means &a.x==&a.y and so on. (otherwise it would be the default.)
 
 namespace glsl {
 
@@ -271,7 +271,9 @@ namespace glsl {
     struct Matrix<1, 1, F*, I> {
 
         no_const<F> data[1 + I];
-
+        auto* operator&() {
+            return &data[I];
+        }
         auto& operator=(const F& other) {
             data[I] = other;
             return *this;
