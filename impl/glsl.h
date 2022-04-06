@@ -1,7 +1,5 @@
 #pragma once
 
-#define GLSL_STANDARD_COMPLIANT // define this to make the swizzle unions not rely on anonymous structs inside anonymous unions, which are widely supported but non-standard. beware: this means &a.x==&a.y and so on. (otherwise it would be the default.)
-
 namespace glsl {
 
     template<typename... I>
@@ -294,14 +292,10 @@ namespace glsl {
         Container() = default;
         union {
             no_ptr<no_const<F>> data[2];
-#ifdef GLSL_STANDARD_COMPLIANT
+
             Matrix<1, 1, no_ptr<F>*, 0> x, r, s;
             Matrix<1, 1, no_ptr<F>*, 1> y, g, t;
-#else
-            struct{no_ptr<F> x, y;};
-            struct{no_ptr<F> r, g;};
-            struct{no_ptr<F> s, t;};
-#endif
+
             Matrix<2, 1, const no_ptr<F>*, 0, 0> xx, rr, ss;
             Matrix<2, 1, no_ptr<F>*, 0, 1> xy, rg, st;
             Matrix<2, 1, no_ptr<F>*, 1, 0> yx, gr, ts;
@@ -341,15 +335,9 @@ namespace glsl {
         union {
             no_ptr<no_const<F>> data[3];
 
-#ifdef GLSL_STANDARD_COMPLIANT
             Matrix<1, 1, no_ptr<F>*, 0> x, r, s;
             Matrix<1, 1, no_ptr<F>*, 1> y, g, t;
             Matrix<1, 1, no_ptr<F>*, 2> z, b, p;
-#else
-            struct { no_ptr<F> x, y, z; };
-            struct { no_ptr<F> r, g, b; };
-            struct { no_ptr<F> s, t, p; };
-#endif
 
             Matrix<2, 1, const no_ptr<F>*, 0, 0> xx, rr, ss;
             Matrix<2, 1, no_ptr<F>*, 0, 1> xy, rg, st;
@@ -478,16 +466,11 @@ namespace glsl {
         union {
             no_ptr<no_const<F>> data[4];
 
-#ifdef GLSL_STANDARD_COMPLIANT
             Matrix<1, 1, no_ptr<F>*, 0> x, r, s;
             Matrix<1, 1, no_ptr<F>*, 1> y, g, t;
             Matrix<1, 1, no_ptr<F>*, 2> z, b, p;
             Matrix<1, 1, no_ptr<F>*, 3> w, a, q;
-#else
-            struct { no_ptr<F> x, y, z, w; };
-            struct { no_ptr<F> r, g, b, a; };
-            struct { no_ptr<F> s, t, p, q; };
-#endif
+
             Matrix<2, 1, const no_ptr<F>*, 0, 0> xx, rr, ss;
             Matrix<2, 1, no_ptr<F>*, 0, 1> xy, rg, st;
             Matrix<2, 1, no_ptr<F>*, 0, 2> xz, rb, sp;
