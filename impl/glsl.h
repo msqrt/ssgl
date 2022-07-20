@@ -154,8 +154,10 @@ namespace glsl {
                     ((data[I] = choice[I % R == I / R]), ...);
                 }
             }
-            else if constexpr (R == R2 && C == C2)
-                ((data[I] = F(other.data[I2])), ...);
+            else if constexpr (R == R2 && C == C2) {
+                int i2[] = { I2... };
+                ((data[I] = F(other.data[i2[I]])), ...);
+            }
             else {
                 F choice[2] = { 0, 1 };
                 // I%R gives the row and I/R the column
