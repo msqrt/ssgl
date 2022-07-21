@@ -268,6 +268,7 @@ void setupGL(int width, int height, const char* title, bool fullscreen, bool sho
 
 	setupDebug();
 	glEnable(GL_FRAMEBUFFER_SRGB);
+	((PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT"))(-1); // freesync
 }
 
 #include <crtdbg.h>
