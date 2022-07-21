@@ -53,10 +53,22 @@ inline glsl_function mat3 basis(vec3 n){
         n);
 }
 
+// as per the sRGB standard
 inline glsl_function vec3 srgb_to_linear(vec3 x) {
     return mix(x / 12.92f, pow((x + .055f) / 1.055f, vec3(2.4f)), step(.04045f, x));
 }
 
 inline glsl_function vec3 linear_to_srgb(vec3 x) {
     return mix(x * 12.92f, pow(x, vec3(1.f/2.4f))*1.055f - .055f, step(.0031308f, x));
+}
+
+// convert floating points to uints and back, preserving order.
+// mostly useful for performing atomicMax/Min on floats (map float to sortable uint -> uint atomic -> map result back to float).
+glsl_function uint convert_sortable(float f) {
+    uint result = ~floatBitsToUint(f);
+    return result ^ (0x7fffffff * (result >> 31));
+}
+
+glsl_function float convert_sortable(uint f) {
+    return uintBitsToFloat(~(f ^ (0x7fffffff * (f >> 31))));
 }
