@@ -411,6 +411,7 @@ namespace inline_glsl {
         if (!shader_obj.store->cached) {
 
             const char* stub = "\
+#extension GL_ARB_gpu_shader_int64 : enable\n\
 #define glsl_main() main()\n\
 #define glsl_func(a) a\n\
 #define dynamic_array(t, a) t a[]\n\
@@ -672,6 +673,10 @@ namespace inline_glsl {
     void Arg::bind(ShaderState& shader_state, ArgStore<uint>& store) {
         //printf("set uniform uint '%s' to %ui\n", store.name, store.item);
         glUniform1ui(store.location, store.item);
+    }
+    void Arg::bind(ShaderState& shader_state, ArgStore<uint64_t>& store) {
+        //printf("set uniform uint '%s' to %ui\n", store.name, store.item);
+        glUniform1ui64(store.location, store.item);
     }
     void Arg::bind(ShaderState& shader_state, ArgStore<vec2>& store) {
         //printf("set uniform vec2 '%s'\n", store.name);

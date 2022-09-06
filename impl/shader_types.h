@@ -67,6 +67,7 @@ template<GLenum type, typename T, bool shadow = false>
 struct Sampler {
     GLuint obj;
     Sampler() : obj(0) { }
+    Sampler(uint64_t) : obj(0) { }
     template<GLuint target>
     Sampler(const Texture<target>& t) : obj(t) {}
     operator int() { return obj; }

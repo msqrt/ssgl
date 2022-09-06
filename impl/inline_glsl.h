@@ -260,6 +260,7 @@ namespace inline_glsl {
         void bind(ShaderState& shader_state, ArgStore<float>& store);
         void bind(ShaderState& shader_state, ArgStore<int>& store);
         void bind(ShaderState& shader_state, ArgStore<uint>& store);
+        void bind(ShaderState& shader_state, ArgStore<uint64_t>& store);
         void bind(ShaderState& shader_state, ArgStore<vec2>& store);
         void bind(ShaderState& shader_state, ArgStore<ivec2>& store);
         void bind(ShaderState& shader_state, ArgStore<uvec2>& store);
