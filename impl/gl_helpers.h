@@ -49,7 +49,10 @@ template<GLenum target = GL_INVALID_INDEX> struct Texture;
 template<>
 struct Texture<GL_INVALID_INDEX> {
 public:
-	void destroy() { if (object && owning) { glDeleteTextures(1, &object); object = 0; } }
+	void destroy() {
+		if (handle != 0) glMakeTextureHandleNonResident(handle);
+		if (object && owning) { glDeleteTextures(1, &object); object = 0; }
+	}
 	Texture() : object(0), target(GL_INVALID_INDEX) {}
 	Texture(GLuint target, bool owning = false) : target(target), owning(owning) { glCreateTextures(target, 1, &object); }
 	~Texture() { if (object != 0 && owning) destroy(); }
@@ -76,14 +79,24 @@ public:
 	operator GLuint() const { return object; }
 	operator bool() const { return object != 0; }
 	GLuint level = 0, layer = GL_INVALID_INDEX, target;
+	GLuint64 getBindless() {
+		if (handle == 0) {
+			handle = glGetTextureHandle(object);
+			glMakeTextureHandleResident(handle);
+		}
+		return handle;
+	}
 private:
-	GLuint object; bool owning;
+	GLuint object; bool owning; GLuint64 handle = 0;
 };
 
 template<GLenum T>
 struct Texture {
 public:
-	void destroy() { if (object && owning) { glDeleteTextures(1, &object); object = 0; } }
+	void destroy() {
+		if (handle != 0) glMakeTextureHandleNonResident(handle);
+		if (object && owning) { glDeleteTextures(1, &object); object = 0; }
+	}
 	Texture() : owning(true) { glCreateTextures(T, 1, &object); }
 	~Texture() { destroy(); }
 	Texture(GLuint other, bool owning = false) : object(other), owning(owning) {}
@@ -96,8 +109,15 @@ public:
 	static constexpr GLuint level = 0, layer = GL_INVALID_INDEX;
 	friend Texture<>;
 	static constexpr GLuint target = T;
+	GLuint64 getBindless() {
+		if (handle == 0) {
+			handle = glGetTextureHandle(object);
+			glMakeTextureHandleResident(handle);
+		}
+		return handle;
+	}
 private:
-	GLuint object = 0; bool owning;
+	GLuint object = 0; bool owning; GLuint64 handle = 0;
 };
 
 template<GLenum target>
