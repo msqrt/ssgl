@@ -331,7 +331,7 @@ PFNGLDELETESYNCPROC ptr_glDeleteSync = nullptr; void  glDeleteSync(GLsync sync) 
 PFNGLCLIENTWAITSYNCPROC ptr_glClientWaitSync = nullptr; GLenum  glClientWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeout) { return ptr_glClientWaitSync(sync, flags, timeout); }
 PFNGLWAITSYNCPROC ptr_glWaitSync = nullptr; void  glWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeout) { ptr_glWaitSync(sync, flags, timeout); }
 PFNGLGETINTEGER64VPROC ptr_glGetInteger64v = nullptr; void  glGetInteger64v(GLenum pname, GLint64 *data) { ptr_glGetInteger64v(pname, data); }
-PFNGLGETSYNCIVPROC ptr_glGetSynciv = nullptr; void  glGetSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei *length, GLint *values) { ptr_glGetSynciv(sync, pname, bufSize, length, values); }
+PFNGLGETSYNCIVPROC ptr_glGetSynciv = nullptr; void  glGetSynciv(GLsync sync, GLenum pname, GLsizei count, GLsizei *length, GLint *values) { ptr_glGetSynciv(sync, pname, count, length, values); }
 PFNGLGETINTEGER64I_VPROC ptr_glGetInteger64i_v = nullptr; void  glGetInteger64i_v(GLenum target, GLuint index, GLint64 *data) { ptr_glGetInteger64i_v(target, index, data); }
 PFNGLGETBUFFERPARAMETERI64VPROC ptr_glGetBufferParameteri64v = nullptr; void  glGetBufferParameteri64v(GLenum target, GLenum pname, GLint64 *params) { ptr_glGetBufferParameteri64v(target, pname, params); }
 PFNGLFRAMEBUFFERTEXTUREPROC ptr_glFramebufferTexture = nullptr; void  glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level) { ptr_glFramebufferTexture(target, attachment, texture, level); }
@@ -425,8 +425,8 @@ PFNGLGETUNIFORMDVPROC ptr_glGetUniformdv = nullptr; void  glGetUniformdv(GLuint 
 PFNGLGETSUBROUTINEUNIFORMLOCATIONPROC ptr_glGetSubroutineUniformLocation = nullptr; GLint  glGetSubroutineUniformLocation(GLuint program, GLenum shadertype, const GLchar *name) { return ptr_glGetSubroutineUniformLocation(program, shadertype, name); }
 PFNGLGETSUBROUTINEINDEXPROC ptr_glGetSubroutineIndex = nullptr; GLuint  glGetSubroutineIndex(GLuint program, GLenum shadertype, const GLchar *name) { return ptr_glGetSubroutineIndex(program, shadertype, name); }
 PFNGLGETACTIVESUBROUTINEUNIFORMIVPROC ptr_glGetActiveSubroutineUniformiv = nullptr; void  glGetActiveSubroutineUniformiv(GLuint program, GLenum shadertype, GLuint index, GLenum pname, GLint *values) { ptr_glGetActiveSubroutineUniformiv(program, shadertype, index, pname, values); }
-PFNGLGETACTIVESUBROUTINEUNIFORMNAMEPROC ptr_glGetActiveSubroutineUniformName = nullptr; void  glGetActiveSubroutineUniformName(GLuint program, GLenum shadertype, GLuint index, GLsizei bufsize, GLsizei *length, GLchar *name) { ptr_glGetActiveSubroutineUniformName(program, shadertype, index, bufsize, length, name); }
-PFNGLGETACTIVESUBROUTINENAMEPROC ptr_glGetActiveSubroutineName = nullptr; void  glGetActiveSubroutineName(GLuint program, GLenum shadertype, GLuint index, GLsizei bufsize, GLsizei *length, GLchar *name) { ptr_glGetActiveSubroutineName(program, shadertype, index, bufsize, length, name); }
+PFNGLGETACTIVESUBROUTINEUNIFORMNAMEPROC ptr_glGetActiveSubroutineUniformName = nullptr; void  glGetActiveSubroutineUniformName(GLuint program, GLenum shadertype, GLuint index, GLsizei bufSize, GLsizei *length, GLchar *name) { ptr_glGetActiveSubroutineUniformName(program, shadertype, index, bufSize, length, name); }
+PFNGLGETACTIVESUBROUTINENAMEPROC ptr_glGetActiveSubroutineName = nullptr; void  glGetActiveSubroutineName(GLuint program, GLenum shadertype, GLuint index, GLsizei bufSize, GLsizei *length, GLchar *name) { ptr_glGetActiveSubroutineName(program, shadertype, index, bufSize, length, name); }
 PFNGLUNIFORMSUBROUTINESUIVPROC ptr_glUniformSubroutinesuiv = nullptr; void  glUniformSubroutinesuiv(GLenum shadertype, GLsizei count, const GLuint *indices) { ptr_glUniformSubroutinesuiv(shadertype, count, indices); }
 PFNGLGETUNIFORMSUBROUTINEUIVPROC ptr_glGetUniformSubroutineuiv = nullptr; void  glGetUniformSubroutineuiv(GLenum shadertype, GLint location, GLuint *params) { ptr_glGetUniformSubroutineuiv(shadertype, location, params); }
 PFNGLGETPROGRAMSTAGEIVPROC ptr_glGetProgramStageiv = nullptr; void  glGetProgramStageiv(GLuint program, GLenum shadertype, GLenum pname, GLint *values) { ptr_glGetProgramStageiv(program, shadertype, pname, values); }
@@ -444,7 +444,7 @@ PFNGLBEGINQUERYINDEXEDPROC ptr_glBeginQueryIndexed = nullptr; void  glBeginQuery
 PFNGLENDQUERYINDEXEDPROC ptr_glEndQueryIndexed = nullptr; void  glEndQueryIndexed(GLenum target, GLuint index) { ptr_glEndQueryIndexed(target, index); }
 PFNGLGETQUERYINDEXEDIVPROC ptr_glGetQueryIndexediv = nullptr; void  glGetQueryIndexediv(GLenum target, GLuint index, GLenum pname, GLint *params) { ptr_glGetQueryIndexediv(target, index, pname, params); }
 PFNGLRELEASESHADERCOMPILERPROC ptr_glReleaseShaderCompiler = nullptr; void  glReleaseShaderCompiler(void) { ptr_glReleaseShaderCompiler(); }
-PFNGLSHADERBINARYPROC ptr_glShaderBinary = nullptr; void  glShaderBinary(GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length) { ptr_glShaderBinary(count, shaders, binaryformat, binary, length); }
+PFNGLSHADERBINARYPROC ptr_glShaderBinary = nullptr; void  glShaderBinary(GLsizei count, const GLuint *shaders, GLenum binaryFormat, const void *binary, GLsizei length) { ptr_glShaderBinary(count, shaders, binaryFormat, binary, length); }
 PFNGLGETSHADERPRECISIONFORMATPROC ptr_glGetShaderPrecisionFormat = nullptr; void  glGetShaderPrecisionFormat(GLenum shadertype, GLenum precisiontype, GLint *range, GLint *precision) { ptr_glGetShaderPrecisionFormat(shadertype, precisiontype, range, precision); }
 PFNGLDEPTHRANGEFPROC ptr_glDepthRangef = nullptr; void  glDepthRangef(GLfloat n, GLfloat f) { ptr_glDepthRangef(n, f); }
 PFNGLCLEARDEPTHFPROC ptr_glClearDepthf = nullptr; void  glClearDepthf(GLfloat d) { ptr_glClearDepthf(d); }
@@ -534,7 +534,7 @@ PFNGLGETDOUBLEI_VPROC ptr_glGetDoublei_v = nullptr; void  glGetDoublei_v(GLenum 
 PFNGLDRAWARRAYSINSTANCEDBASEINSTANCEPROC ptr_glDrawArraysInstancedBaseInstance = nullptr; void  glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei instancecount, GLuint baseinstance) { ptr_glDrawArraysInstancedBaseInstance(mode, first, count, instancecount, baseinstance); }
 PFNGLDRAWELEMENTSINSTANCEDBASEINSTANCEPROC ptr_glDrawElementsInstancedBaseInstance = nullptr; void  glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount, GLuint baseinstance) { ptr_glDrawElementsInstancedBaseInstance(mode, count, type, indices, instancecount, baseinstance); }
 PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXBASEINSTANCEPROC ptr_glDrawElementsInstancedBaseVertexBaseInstance = nullptr; void  glDrawElementsInstancedBaseVertexBaseInstance(GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount, GLint basevertex, GLuint baseinstance) { ptr_glDrawElementsInstancedBaseVertexBaseInstance(mode, count, type, indices, instancecount, basevertex, baseinstance); }
-PFNGLGETINTERNALFORMATIVPROC ptr_glGetInternalformativ = nullptr; void  glGetInternalformativ(GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint *params) { ptr_glGetInternalformativ(target, internalformat, pname, bufSize, params); }
+PFNGLGETINTERNALFORMATIVPROC ptr_glGetInternalformativ = nullptr; void  glGetInternalformativ(GLenum target, GLenum internalformat, GLenum pname, GLsizei count, GLint *params) { ptr_glGetInternalformativ(target, internalformat, pname, count, params); }
 PFNGLGETACTIVEATOMICCOUNTERBUFFERIVPROC ptr_glGetActiveAtomicCounterBufferiv = nullptr; void  glGetActiveAtomicCounterBufferiv(GLuint program, GLuint bufferIndex, GLenum pname, GLint *params) { ptr_glGetActiveAtomicCounterBufferiv(program, bufferIndex, pname, params); }
 PFNGLBINDIMAGETEXTUREPROC ptr_glBindImageTexture = nullptr; void  glBindImageTexture(GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, GLenum access, GLenum format) { ptr_glBindImageTexture(unit, texture, level, layered, layer, access, format); }
 PFNGLMEMORYBARRIERPROC ptr_glMemoryBarrier = nullptr; void  glMemoryBarrier(GLbitfield barriers) { ptr_glMemoryBarrier(barriers); }
@@ -550,7 +550,7 @@ PFNGLDISPATCHCOMPUTEINDIRECTPROC ptr_glDispatchComputeIndirect = nullptr; void  
 PFNGLCOPYIMAGESUBDATAPROC ptr_glCopyImageSubData = nullptr; void  glCopyImageSubData(GLuint srcName, GLenum srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, GLuint dstName, GLenum dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth) { ptr_glCopyImageSubData(srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget, dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth); }
 PFNGLFRAMEBUFFERPARAMETERIPROC ptr_glFramebufferParameteri = nullptr; void  glFramebufferParameteri(GLenum target, GLenum pname, GLint param) { ptr_glFramebufferParameteri(target, pname, param); }
 PFNGLGETFRAMEBUFFERPARAMETERIVPROC ptr_glGetFramebufferParameteriv = nullptr; void  glGetFramebufferParameteriv(GLenum target, GLenum pname, GLint *params) { ptr_glGetFramebufferParameteriv(target, pname, params); }
-PFNGLGETINTERNALFORMATI64VPROC ptr_glGetInternalformati64v = nullptr; void  glGetInternalformati64v(GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint64 *params) { ptr_glGetInternalformati64v(target, internalformat, pname, bufSize, params); }
+PFNGLGETINTERNALFORMATI64VPROC ptr_glGetInternalformati64v = nullptr; void  glGetInternalformati64v(GLenum target, GLenum internalformat, GLenum pname, GLsizei count, GLint64 *params) { ptr_glGetInternalformati64v(target, internalformat, pname, count, params); }
 PFNGLINVALIDATETEXSUBIMAGEPROC ptr_glInvalidateTexSubImage = nullptr; void  glInvalidateTexSubImage(GLuint texture, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth) { ptr_glInvalidateTexSubImage(texture, level, xoffset, yoffset, zoffset, width, height, depth); }
 PFNGLINVALIDATETEXIMAGEPROC ptr_glInvalidateTexImage = nullptr; void  glInvalidateTexImage(GLuint texture, GLint level) { ptr_glInvalidateTexImage(texture, level); }
 PFNGLINVALIDATEBUFFERSUBDATAPROC ptr_glInvalidateBufferSubData = nullptr; void  glInvalidateBufferSubData(GLuint buffer, GLintptr offset, GLsizeiptr length) { ptr_glInvalidateBufferSubData(buffer, offset, length); }
@@ -562,7 +562,7 @@ PFNGLMULTIDRAWELEMENTSINDIRECTPROC ptr_glMultiDrawElementsIndirect = nullptr; vo
 PFNGLGETPROGRAMINTERFACEIVPROC ptr_glGetProgramInterfaceiv = nullptr; void  glGetProgramInterfaceiv(GLuint program, GLenum programInterface, GLenum pname, GLint *params) { ptr_glGetProgramInterfaceiv(program, programInterface, pname, params); }
 PFNGLGETPROGRAMRESOURCEINDEXPROC ptr_glGetProgramResourceIndex = nullptr; GLuint  glGetProgramResourceIndex(GLuint program, GLenum programInterface, const GLchar *name) { return ptr_glGetProgramResourceIndex(program, programInterface, name); }
 PFNGLGETPROGRAMRESOURCENAMEPROC ptr_glGetProgramResourceName = nullptr; void  glGetProgramResourceName(GLuint program, GLenum programInterface, GLuint index, GLsizei bufSize, GLsizei *length, GLchar *name) { ptr_glGetProgramResourceName(program, programInterface, index, bufSize, length, name); }
-PFNGLGETPROGRAMRESOURCEIVPROC ptr_glGetProgramResourceiv = nullptr; void  glGetProgramResourceiv(GLuint program, GLenum programInterface, GLuint index, GLsizei propCount, const GLenum *props, GLsizei bufSize, GLsizei *length, GLint *params) { ptr_glGetProgramResourceiv(program, programInterface, index, propCount, props, bufSize, length, params); }
+PFNGLGETPROGRAMRESOURCEIVPROC ptr_glGetProgramResourceiv = nullptr; void  glGetProgramResourceiv(GLuint program, GLenum programInterface, GLuint index, GLsizei propCount, const GLenum *props, GLsizei count, GLsizei *length, GLint *params) { ptr_glGetProgramResourceiv(program, programInterface, index, propCount, props, count, length, params); }
 PFNGLGETPROGRAMRESOURCELOCATIONPROC ptr_glGetProgramResourceLocation = nullptr; GLint  glGetProgramResourceLocation(GLuint program, GLenum programInterface, const GLchar *name) { return ptr_glGetProgramResourceLocation(program, programInterface, name); }
 PFNGLGETPROGRAMRESOURCELOCATIONINDEXPROC ptr_glGetProgramResourceLocationIndex = nullptr; GLint  glGetProgramResourceLocationIndex(GLuint program, GLenum programInterface, const GLchar *name) { return ptr_glGetProgramResourceLocationIndex(program, programInterface, name); }
 PFNGLSHADERSTORAGEBLOCKBINDINGPROC ptr_glShaderStorageBlockBinding = nullptr; void  glShaderStorageBlockBinding(GLuint program, GLuint storageBlockIndex, GLuint storageBlockBinding) { ptr_glShaderStorageBlockBinding(program, storageBlockIndex, storageBlockBinding); }
@@ -737,14 +737,50 @@ PFNGLISIMAGEHANDLERESIDENTARBPROC ptr_glIsImageHandleResident = nullptr; GLboole
 PFNGLVERTEXATTRIBL1UI64ARBPROC ptr_glVertexAttribL1ui64 = nullptr; void  glVertexAttribL1ui64(GLuint index, GLuint64EXT x) { ptr_glVertexAttribL1ui64(index, x); }
 PFNGLVERTEXATTRIBL1UI64VARBPROC ptr_glVertexAttribL1ui64v = nullptr; void  glVertexAttribL1ui64v(GLuint index, const GLuint64EXT *v) { ptr_glVertexAttribL1ui64v(index, v); }
 PFNGLGETVERTEXATTRIBLUI64VARBPROC ptr_glGetVertexAttribLui64v = nullptr; void  glGetVertexAttribLui64v(GLuint index, GLenum pname, GLuint64EXT *params) { ptr_glGetVertexAttribLui64v(index, pname, params); }
+PFNGLUNIFORM1I64ARBPROC ptr_glUniform1i64 = nullptr; void  glUniform1i64(GLint location, GLint64 x) { ptr_glUniform1i64(location, x); }
+PFNGLUNIFORM2I64ARBPROC ptr_glUniform2i64 = nullptr; void  glUniform2i64(GLint location, GLint64 x, GLint64 y) { ptr_glUniform2i64(location, x, y); }
+PFNGLUNIFORM3I64ARBPROC ptr_glUniform3i64 = nullptr; void  glUniform3i64(GLint location, GLint64 x, GLint64 y, GLint64 z) { ptr_glUniform3i64(location, x, y, z); }
+PFNGLUNIFORM4I64ARBPROC ptr_glUniform4i64 = nullptr; void  glUniform4i64(GLint location, GLint64 x, GLint64 y, GLint64 z, GLint64 w) { ptr_glUniform4i64(location, x, y, z, w); }
+PFNGLUNIFORM1I64VARBPROC ptr_glUniform1i64v = nullptr; void  glUniform1i64v(GLint location, GLsizei count, const GLint64 *value) { ptr_glUniform1i64v(location, count, value); }
+PFNGLUNIFORM2I64VARBPROC ptr_glUniform2i64v = nullptr; void  glUniform2i64v(GLint location, GLsizei count, const GLint64 *value) { ptr_glUniform2i64v(location, count, value); }
+PFNGLUNIFORM3I64VARBPROC ptr_glUniform3i64v = nullptr; void  glUniform3i64v(GLint location, GLsizei count, const GLint64 *value) { ptr_glUniform3i64v(location, count, value); }
+PFNGLUNIFORM4I64VARBPROC ptr_glUniform4i64v = nullptr; void  glUniform4i64v(GLint location, GLsizei count, const GLint64 *value) { ptr_glUniform4i64v(location, count, value); }
+PFNGLUNIFORM1UI64ARBPROC ptr_glUniform1ui64 = nullptr; void  glUniform1ui64(GLint location, GLuint64 x) { ptr_glUniform1ui64(location, x); }
+PFNGLUNIFORM2UI64ARBPROC ptr_glUniform2ui64 = nullptr; void  glUniform2ui64(GLint location, GLuint64 x, GLuint64 y) { ptr_glUniform2ui64(location, x, y); }
+PFNGLUNIFORM3UI64ARBPROC ptr_glUniform3ui64 = nullptr; void  glUniform3ui64(GLint location, GLuint64 x, GLuint64 y, GLuint64 z) { ptr_glUniform3ui64(location, x, y, z); }
+PFNGLUNIFORM4UI64ARBPROC ptr_glUniform4ui64 = nullptr; void  glUniform4ui64(GLint location, GLuint64 x, GLuint64 y, GLuint64 z, GLuint64 w) { ptr_glUniform4ui64(location, x, y, z, w); }
+PFNGLUNIFORM1UI64VARBPROC ptr_glUniform1ui64v = nullptr; void  glUniform1ui64v(GLint location, GLsizei count, const GLuint64 *value) { ptr_glUniform1ui64v(location, count, value); }
+PFNGLUNIFORM2UI64VARBPROC ptr_glUniform2ui64v = nullptr; void  glUniform2ui64v(GLint location, GLsizei count, const GLuint64 *value) { ptr_glUniform2ui64v(location, count, value); }
+PFNGLUNIFORM3UI64VARBPROC ptr_glUniform3ui64v = nullptr; void  glUniform3ui64v(GLint location, GLsizei count, const GLuint64 *value) { ptr_glUniform3ui64v(location, count, value); }
+PFNGLUNIFORM4UI64VARBPROC ptr_glUniform4ui64v = nullptr; void  glUniform4ui64v(GLint location, GLsizei count, const GLuint64 *value) { ptr_glUniform4ui64v(location, count, value); }
+PFNGLGETUNIFORMI64VARBPROC ptr_glGetUniformi64v = nullptr; void  glGetUniformi64v(GLuint program, GLint location, GLint64 *params) { ptr_glGetUniformi64v(program, location, params); }
+PFNGLGETUNIFORMUI64VARBPROC ptr_glGetUniformui64v = nullptr; void  glGetUniformui64v(GLuint program, GLint location, GLuint64 *params) { ptr_glGetUniformui64v(program, location, params); }
+PFNGLGETNUNIFORMI64VARBPROC ptr_glGetnUniformi64v = nullptr; void  glGetnUniformi64v(GLuint program, GLint location, GLsizei bufSize, GLint64 *params) { ptr_glGetnUniformi64v(program, location, bufSize, params); }
+PFNGLGETNUNIFORMUI64VARBPROC ptr_glGetnUniformui64v = nullptr; void  glGetnUniformui64v(GLuint program, GLint location, GLsizei bufSize, GLuint64 *params) { ptr_glGetnUniformui64v(program, location, bufSize, params); }
+PFNGLPROGRAMUNIFORM1I64ARBPROC ptr_glProgramUniform1i64 = nullptr; void  glProgramUniform1i64(GLuint program, GLint location, GLint64 x) { ptr_glProgramUniform1i64(program, location, x); }
+PFNGLPROGRAMUNIFORM2I64ARBPROC ptr_glProgramUniform2i64 = nullptr; void  glProgramUniform2i64(GLuint program, GLint location, GLint64 x, GLint64 y) { ptr_glProgramUniform2i64(program, location, x, y); }
+PFNGLPROGRAMUNIFORM3I64ARBPROC ptr_glProgramUniform3i64 = nullptr; void  glProgramUniform3i64(GLuint program, GLint location, GLint64 x, GLint64 y, GLint64 z) { ptr_glProgramUniform3i64(program, location, x, y, z); }
+PFNGLPROGRAMUNIFORM4I64ARBPROC ptr_glProgramUniform4i64 = nullptr; void  glProgramUniform4i64(GLuint program, GLint location, GLint64 x, GLint64 y, GLint64 z, GLint64 w) { ptr_glProgramUniform4i64(program, location, x, y, z, w); }
+PFNGLPROGRAMUNIFORM1I64VARBPROC ptr_glProgramUniform1i64v = nullptr; void  glProgramUniform1i64v(GLuint program, GLint location, GLsizei count, const GLint64 *value) { ptr_glProgramUniform1i64v(program, location, count, value); }
+PFNGLPROGRAMUNIFORM2I64VARBPROC ptr_glProgramUniform2i64v = nullptr; void  glProgramUniform2i64v(GLuint program, GLint location, GLsizei count, const GLint64 *value) { ptr_glProgramUniform2i64v(program, location, count, value); }
+PFNGLPROGRAMUNIFORM3I64VARBPROC ptr_glProgramUniform3i64v = nullptr; void  glProgramUniform3i64v(GLuint program, GLint location, GLsizei count, const GLint64 *value) { ptr_glProgramUniform3i64v(program, location, count, value); }
+PFNGLPROGRAMUNIFORM4I64VARBPROC ptr_glProgramUniform4i64v = nullptr; void  glProgramUniform4i64v(GLuint program, GLint location, GLsizei count, const GLint64 *value) { ptr_glProgramUniform4i64v(program, location, count, value); }
+PFNGLPROGRAMUNIFORM1UI64ARBPROC ptr_glProgramUniform1ui64 = nullptr; void  glProgramUniform1ui64(GLuint program, GLint location, GLuint64 x) { ptr_glProgramUniform1ui64(program, location, x); }
+PFNGLPROGRAMUNIFORM2UI64ARBPROC ptr_glProgramUniform2ui64 = nullptr; void  glProgramUniform2ui64(GLuint program, GLint location, GLuint64 x, GLuint64 y) { ptr_glProgramUniform2ui64(program, location, x, y); }
+PFNGLPROGRAMUNIFORM3UI64ARBPROC ptr_glProgramUniform3ui64 = nullptr; void  glProgramUniform3ui64(GLuint program, GLint location, GLuint64 x, GLuint64 y, GLuint64 z) { ptr_glProgramUniform3ui64(program, location, x, y, z); }
+PFNGLPROGRAMUNIFORM4UI64ARBPROC ptr_glProgramUniform4ui64 = nullptr; void  glProgramUniform4ui64(GLuint program, GLint location, GLuint64 x, GLuint64 y, GLuint64 z, GLuint64 w) { ptr_glProgramUniform4ui64(program, location, x, y, z, w); }
+PFNGLPROGRAMUNIFORM1UI64VARBPROC ptr_glProgramUniform1ui64v = nullptr; void  glProgramUniform1ui64v(GLuint program, GLint location, GLsizei count, const GLuint64 *value) { ptr_glProgramUniform1ui64v(program, location, count, value); }
+PFNGLPROGRAMUNIFORM2UI64VARBPROC ptr_glProgramUniform2ui64v = nullptr; void  glProgramUniform2ui64v(GLuint program, GLint location, GLsizei count, const GLuint64 *value) { ptr_glProgramUniform2ui64v(program, location, count, value); }
+PFNGLPROGRAMUNIFORM3UI64VARBPROC ptr_glProgramUniform3ui64v = nullptr; void  glProgramUniform3ui64v(GLuint program, GLint location, GLsizei count, const GLuint64 *value) { ptr_glProgramUniform3ui64v(program, location, count, value); }
+PFNGLPROGRAMUNIFORM4UI64VARBPROC ptr_glProgramUniform4ui64v = nullptr; void  glProgramUniform4ui64v(GLuint program, GLint location, GLsizei count, const GLuint64 *value) { ptr_glProgramUniform4ui64v(program, location, count, value); }
 
 #ifndef _WIN32
 #define wglGetProcAddress eglGetProcAddress
 #include <stdio.h>
 #include <EGL/egl.h>
-const char* TEXT(const char* t) {return t;}
+const char* TEXT(const char* t) { return t; }
 int MB_OK = 0;
-void MessageBox(int, const char* text, const char* title, int) {printf("%s\n", text);} 
+void MessageBox(int, const char* text, const char* title, int) { printf("%s\n", text); }
 #endif
 
 int loadgl() {
@@ -2933,6 +2969,114 @@ int loadgl() {
 
 	ptr_glGetVertexAttribLui64v = (PFNGLGETVERTEXATTRIBLUI64VARBPROC)wglGetProcAddress("glGetVertexAttribLui64vARB");
 	if(!ptr_glGetVertexAttribLui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension bindless_texture, function \"glGetVertexAttribLui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform1i64 = (PFNGLUNIFORM1I64ARBPROC)wglGetProcAddress("glUniform1i64ARB");
+	if(!ptr_glUniform1i64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform1i64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform2i64 = (PFNGLUNIFORM2I64ARBPROC)wglGetProcAddress("glUniform2i64ARB");
+	if(!ptr_glUniform2i64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform2i64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform3i64 = (PFNGLUNIFORM3I64ARBPROC)wglGetProcAddress("glUniform3i64ARB");
+	if(!ptr_glUniform3i64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform3i64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform4i64 = (PFNGLUNIFORM4I64ARBPROC)wglGetProcAddress("glUniform4i64ARB");
+	if(!ptr_glUniform4i64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform4i64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform1i64v = (PFNGLUNIFORM1I64VARBPROC)wglGetProcAddress("glUniform1i64vARB");
+	if(!ptr_glUniform1i64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform1i64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform2i64v = (PFNGLUNIFORM2I64VARBPROC)wglGetProcAddress("glUniform2i64vARB");
+	if(!ptr_glUniform2i64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform2i64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform3i64v = (PFNGLUNIFORM3I64VARBPROC)wglGetProcAddress("glUniform3i64vARB");
+	if(!ptr_glUniform3i64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform3i64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform4i64v = (PFNGLUNIFORM4I64VARBPROC)wglGetProcAddress("glUniform4i64vARB");
+	if(!ptr_glUniform4i64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform4i64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform1ui64 = (PFNGLUNIFORM1UI64ARBPROC)wglGetProcAddress("glUniform1ui64ARB");
+	if(!ptr_glUniform1ui64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform1ui64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform2ui64 = (PFNGLUNIFORM2UI64ARBPROC)wglGetProcAddress("glUniform2ui64ARB");
+	if(!ptr_glUniform2ui64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform2ui64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform3ui64 = (PFNGLUNIFORM3UI64ARBPROC)wglGetProcAddress("glUniform3ui64ARB");
+	if(!ptr_glUniform3ui64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform3ui64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform4ui64 = (PFNGLUNIFORM4UI64ARBPROC)wglGetProcAddress("glUniform4ui64ARB");
+	if(!ptr_glUniform4ui64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform4ui64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform1ui64v = (PFNGLUNIFORM1UI64VARBPROC)wglGetProcAddress("glUniform1ui64vARB");
+	if(!ptr_glUniform1ui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform1ui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform2ui64v = (PFNGLUNIFORM2UI64VARBPROC)wglGetProcAddress("glUniform2ui64vARB");
+	if(!ptr_glUniform2ui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform2ui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform3ui64v = (PFNGLUNIFORM3UI64VARBPROC)wglGetProcAddress("glUniform3ui64vARB");
+	if(!ptr_glUniform3ui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform3ui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glUniform4ui64v = (PFNGLUNIFORM4UI64VARBPROC)wglGetProcAddress("glUniform4ui64vARB");
+	if(!ptr_glUniform4ui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glUniform4ui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glGetUniformi64v = (PFNGLGETUNIFORMI64VARBPROC)wglGetProcAddress("glGetUniformi64vARB");
+	if(!ptr_glGetUniformi64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glGetUniformi64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glGetUniformui64v = (PFNGLGETUNIFORMUI64VARBPROC)wglGetProcAddress("glGetUniformui64vARB");
+	if(!ptr_glGetUniformui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glGetUniformui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glGetnUniformi64v = (PFNGLGETNUNIFORMI64VARBPROC)wglGetProcAddress("glGetnUniformi64vARB");
+	if(!ptr_glGetnUniformi64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glGetnUniformi64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glGetnUniformui64v = (PFNGLGETNUNIFORMUI64VARBPROC)wglGetProcAddress("glGetnUniformui64vARB");
+	if(!ptr_glGetnUniformui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glGetnUniformui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform1i64 = (PFNGLPROGRAMUNIFORM1I64ARBPROC)wglGetProcAddress("glProgramUniform1i64ARB");
+	if(!ptr_glProgramUniform1i64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform1i64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform2i64 = (PFNGLPROGRAMUNIFORM2I64ARBPROC)wglGetProcAddress("glProgramUniform2i64ARB");
+	if(!ptr_glProgramUniform2i64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform2i64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform3i64 = (PFNGLPROGRAMUNIFORM3I64ARBPROC)wglGetProcAddress("glProgramUniform3i64ARB");
+	if(!ptr_glProgramUniform3i64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform3i64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform4i64 = (PFNGLPROGRAMUNIFORM4I64ARBPROC)wglGetProcAddress("glProgramUniform4i64ARB");
+	if(!ptr_glProgramUniform4i64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform4i64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform1i64v = (PFNGLPROGRAMUNIFORM1I64VARBPROC)wglGetProcAddress("glProgramUniform1i64vARB");
+	if(!ptr_glProgramUniform1i64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform1i64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform2i64v = (PFNGLPROGRAMUNIFORM2I64VARBPROC)wglGetProcAddress("glProgramUniform2i64vARB");
+	if(!ptr_glProgramUniform2i64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform2i64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform3i64v = (PFNGLPROGRAMUNIFORM3I64VARBPROC)wglGetProcAddress("glProgramUniform3i64vARB");
+	if(!ptr_glProgramUniform3i64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform3i64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform4i64v = (PFNGLPROGRAMUNIFORM4I64VARBPROC)wglGetProcAddress("glProgramUniform4i64vARB");
+	if(!ptr_glProgramUniform4i64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform4i64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform1ui64 = (PFNGLPROGRAMUNIFORM1UI64ARBPROC)wglGetProcAddress("glProgramUniform1ui64ARB");
+	if(!ptr_glProgramUniform1ui64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform1ui64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform2ui64 = (PFNGLPROGRAMUNIFORM2UI64ARBPROC)wglGetProcAddress("glProgramUniform2ui64ARB");
+	if(!ptr_glProgramUniform2ui64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform2ui64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform3ui64 = (PFNGLPROGRAMUNIFORM3UI64ARBPROC)wglGetProcAddress("glProgramUniform3ui64ARB");
+	if(!ptr_glProgramUniform3ui64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform3ui64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform4ui64 = (PFNGLPROGRAMUNIFORM4UI64ARBPROC)wglGetProcAddress("glProgramUniform4ui64ARB");
+	if(!ptr_glProgramUniform4ui64) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform4ui64ARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform1ui64v = (PFNGLPROGRAMUNIFORM1UI64VARBPROC)wglGetProcAddress("glProgramUniform1ui64vARB");
+	if(!ptr_glProgramUniform1ui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform1ui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform2ui64v = (PFNGLPROGRAMUNIFORM2UI64VARBPROC)wglGetProcAddress("glProgramUniform2ui64vARB");
+	if(!ptr_glProgramUniform2ui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform2ui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform3ui64v = (PFNGLPROGRAMUNIFORM3UI64VARBPROC)wglGetProcAddress("glProgramUniform3ui64vARB");
+	if(!ptr_glProgramUniform3ui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform3ui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
+
+	ptr_glProgramUniform4ui64v = (PFNGLPROGRAMUNIFORM4UI64VARBPROC)wglGetProcAddress("glProgramUniform4ui64vARB");
+	if(!ptr_glProgramUniform4ui64v) { MessageBox(0, TEXT("Couldn't load OpenGL extension gpu_shader_int64, function \"glProgramUniform4ui64vARB\" is missing."), TEXT("OpenGL function missing"), MB_OK); result = -1; }
 
 	return result; 
 }
