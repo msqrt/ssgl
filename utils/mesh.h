@@ -3,7 +3,7 @@
 
 #include <immintrin.h>
 
-void get_mesh(const char* filename, void* mesh, bool smooth);
+void get_mesh(const char* filename, void* mesh, bool smooth_shaded);
 
 struct FlatMesh {
 	struct vertex {
