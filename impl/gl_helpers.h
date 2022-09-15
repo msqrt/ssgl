@@ -14,14 +14,20 @@ struct Buffer {
 public:
 	void destroy() { if (object != 0 && owning) { glDeleteBuffers(1, &object); object = 0; } }
 	Buffer() : owning(true) { glCreateBuffers(1, &object); }
-	Buffer(size_t size, GLenum usage = GL_STATIC_DRAW) : owning(true) {
+	Buffer(size_t size, void* data = nullptr, bool immutable = false, GLenum usage_or_flags = GL_STATIC_DRAW) : owning(true) {
 		glCreateBuffers(1, &object);
-		glNamedBufferData(object, size, nullptr, usage);
+		if(immutable)
+			glNamedBufferStorage(object, size, data, usage_or_flags);
+		else
+			glNamedBufferData(object, size, data, usage_or_flags);
 	}
 	template<typename T>
-	Buffer(const std::vector<T>& v, GLenum usage = GL_STATIC_DRAW) : owning(true) {
+	Buffer(const std::vector<T>& v, bool immutable = false, GLenum usage_or_flags = GL_STATIC_DRAW) : owning(true) {
 		glCreateBuffers(1, &object);
-		glNamedBufferData(object, v.size()*sizeof(T), v.data(), usage);
+		if(immutable)
+			glNamedBufferStorage(object, v.size()*sizeof(T), v.data(), usage_or_flags);
+		else
+			glNamedBufferData(object, v.size()*sizeof(T), v.data(), usage_or_flags);
 	}
 	template<typename T>
 	operator std::vector<T>() const {
