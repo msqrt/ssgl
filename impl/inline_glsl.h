@@ -376,7 +376,7 @@ namespace inline_glsl {
 
 #define FIRSTTYPE(a, ...) decltype(UNIQUE(a,0).item)
 
-#define BIND(...) > REPEAT(__VA_ARGS__)(STORE, __VA_ARGS__); inline_glsl::Arg REPEAT(__VA_ARGS__)(ARG, __VA_ARGS__); FIRSTTYPE(__VA_ARGS__, 0) REPEAT(__VA_ARGS__)(SHADOW, __VA_ARGS__); inline_glsl::shader_state.image_access = 0
+#define BIND(...) > REPEAT(__VA_ARGS__)(STORE, __VA_ARGS__); inline_glsl::Arg REPEAT(__VA_ARGS__)(ARG, __VA_ARGS__); const FIRSTTYPE(__VA_ARGS__, 0) REPEAT(__VA_ARGS__)(SHADOW, __VA_ARGS__); inline_glsl::shader_state.image_access = 0
 #define BIND_BLOCK(a)  > UNIQUE(a,0)(#a, a); inline_glsl::Arg UNIQUE(a##_,0)(UNIQUE(a,0), (decltype(UNIQUE(a,0).item))a); inline_glsl::shader_state.image_access = 0; union
 
 // bind(uniform_1, uniform_2, ...)
@@ -398,8 +398,8 @@ namespace inline_glsl {
 #define SELECT_ATTRIB_SET(...) REPEAT(__VA_ARGS__)(SET_ATTR, __VA_ARGS__)
 
 
-#define BIND_ATTRIBUTE(...) UNIQUE(type, __LINE__);(void)UNIQUE(type, __LINE__); static inline_glsl::ArgStore<Attribute<decltype(UNIQUE(type, __LINE__))>> SELECT_TARGET_DECLARE(__VA_ARGS__); inline_glsl::Arg SELECT_ATTRIB_SET(__VA_ARGS__); decltype(UNIQUE(type, __LINE__)) REPEAT(__VA_ARGS__)(SHADOW, __VA_ARGS__)
-#define BIND_TARGET(...) UNIQUE(type, __LINE__);(void)UNIQUE(type, __LINE__); static inline_glsl::ArgStore<Target> SELECT_TARGET_DECLARE(__VA_ARGS__); inline_glsl::Arg SELECT_TARGET_SET(__VA_ARGS__);  decltype(UNIQUE(type, __LINE__)) REPEAT(__VA_ARGS__)(SHADOW, __VA_ARGS__)
+#define BIND_ATTRIBUTE(...) UNIQUE(type, __LINE__);(void)UNIQUE(type, __LINE__); static inline_glsl::ArgStore<Attribute<decltype(UNIQUE(type, __LINE__))>> SELECT_TARGET_DECLARE(__VA_ARGS__); inline_glsl::Arg SELECT_ATTRIB_SET(__VA_ARGS__); const decltype(UNIQUE(type, __LINE__)) REPEAT(__VA_ARGS__)(SHADOW, __VA_ARGS__)
+#define BIND_TARGET(...) UNIQUE(type, __LINE__);(void)UNIQUE(type, __LINE__); static inline_glsl::ArgStore<Target> SELECT_TARGET_DECLARE(__VA_ARGS__); inline_glsl::Arg SELECT_TARGET_SET(__VA_ARGS__); decltype(UNIQUE(type, __LINE__)) REPEAT(__VA_ARGS__)(SHADOW, __VA_ARGS__)
 
 // bind_attribute(attribute_1, attribute_2, ...)
 #define bind_attribute(...) BIND_ATTRIBUTE(__VA_ARGS__)
