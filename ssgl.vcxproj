@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="font.cpp" />
     <ClCompile Include="impl\gl_helpers.cpp" />
     <ClCompile Include="impl\inline_glsl.cpp" />
     <ClCompile Include="main.cpp" />
