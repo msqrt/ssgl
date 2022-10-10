@@ -64,11 +64,11 @@ inline glsl_function vec3 linear_to_srgb(vec3 x) {
 
 // convert floating points to uints and back, preserving order.
 // mostly useful for performing atomicMax/Min on floats (map float to sortable uint -> uint atomic -> map result back to float).
-glsl_function uint convert_sortable(float f) {
+inline glsl_function uint convert_sortable(float f) {
     uint result = ~floatBitsToUint(f);
     return result ^ (0x7fffffff * (result >> 31));
 }
 
-glsl_function float convert_sortable(uint f) {
+inline glsl_function float convert_sortable(uint f) {
     return uintBitsToFloat(~(f ^ (0x7fffffff * (f >> 31))));
 }
