@@ -58,5 +58,5 @@ inline glsl_function vec3 sampleGGX(vec3 Ve, float alpha_x, float alpha_y, float
 inline glsl_function float probGGX(vec3 Ve, vec3 Ne, float alpha_x, float alpha_y) {
     float dot_ = dot(Ve, Ne);
     if (dot_ <= .0f) return .0f;
-    return tokuyoshi_G1(Ve, Ne, alpha_x, alpha_y) * D(Ne, alpha_x, alpha_y) * max(.0f, dot_) / (4.f * dot_ * dot_);
+    return tokuyoshi_G1(Ve, Ne, alpha_x, alpha_y) * D(Ne, alpha_x, alpha_y) / (4.f * dot_);
 }
