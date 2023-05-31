@@ -1669,9 +1669,9 @@ inline void memoryBarrierShared() {}
 
 inline const uvec3 gl_GlobalInvocationID = {};
 inline const uvec3 gl_LocalInvocationID = {};
-inline const uvec3 gl_WorkGroupSize = {1, 1, 1};
+inline const uvec3 gl_WorkGroupSize = { 1, 1, 1 };
 inline const uvec3 gl_WorkGroupID = {};
-inline const uvec3 gl_NumWorkGroups = {};
+inline const uvec3 gl_NumWorkGroups = { 1, 1, 1 };
 inline const uint gl_LocalInvocationIndex = 0u;
 
 inline const vec4 gl_FragCoord = {};
