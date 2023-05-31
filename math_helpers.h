@@ -32,11 +32,13 @@ inline glsl_function mat4 lookAt(vec3 camera_position, vec3 camera_target, vec3 
 
 // Jarzynski and Olano, 2020
 static glsl_global uint rnd_seed = 0;
-inline glsl_function float rnd() {
+inline glsl_function uint rnd_uint() {
     uint x = rnd_seed;
     rnd_seed = rnd_seed * 747796405u + 2891336453u;
-    uint y = ((x >> ((x >> 28u) + 4u)) ^ x) * 277803737u;
-    return float((y >> 22u) ^ y)/float(0xffffffffu);
+    return ((x >> ((x >> 28u) + 4u)) ^ x) * 277803737u;
+}
+inline glsl_function float rnd() {
+    return float(rnd_uint())/float(0xffffffffu);
 }
 inline glsl_function void srnd(uint seed) {
     rnd_seed = seed; rnd();
