@@ -1616,8 +1616,38 @@ inline auto uint64BitsToDouble(const genType& x) {
 inline int64_t packInt2x32(ivec2 v) { return int64_t(v.y) << 32 | v.x; }
 inline uint64_t packUint2x32(uvec2 v) { return uint64_t(v.y) << 32 | v.x; }
 
-inline ivec2 unpackInt2x32(int64_t  v) { return ivec2(v, v>>32); }
+inline ivec2 unpackInt2x32(int64_t  v) { return ivec2(v, v >> 32); }
 inline uvec2 unpackUint2x32(uint64_t v) { return uvec2(v, v >> 32); }
+
+inline uint packUnorm2x16(vec2 c) {
+    uvec2 v = round(clamp(c, 0.0f, 1.0f) * 65535.0f);
+    return (v.x << 16) | v.y;
+}
+inline uint packSnorm2x16(vec2 c) {
+    uvec2 v = round(clamp(c, -1.0f, 1.0f) * 32767.0f);
+    return (v.x << 16) | v.y;
+}
+inline uint packUnorm4x8(vec4 c) {
+    uvec4 v = round(clamp(c, 0.0f, 1.0f) * 255.0f);
+    return (v.x << 24) | (v.y << 16) | (v.z << 8) | v.w;
+}
+inline uint packSnorm4x8(vec4 c) {
+    uvec4 v = round(clamp(c, -1.0f, 1.0f) * 127.0f);
+    return (v.x << 24) | (v.y << 16) | (v.z << 8) | v.w;
+}
+
+inline vec2 unpackUnorm2x16(uint p) {
+    return uvec2(p >> 16, p&65535) / 65535.0f;
+}
+inline vec2 unpackSnorm2x16(uint p) {
+    return clamp(uvec2(p >> 16, p & 65535) / 32727.0, -1.0, 1.0);
+}
+inline vec4 unpackUnorm4x8(uint p) {
+    return ((p >> uvec4(24, 16, 8, 0)) & 255) / 255.f;
+}
+inline vec4 unpackSnorm4x8(uint p) {
+    return clamp(((p >> uvec4(24, 16, 8, 0)) & 255) / 127.f, -1.f, 1.f);
+}
 
 inline int atomicAdd(int& mem, int data) { return 0; }
 inline uint atomicAdd(uint& mem, uint data) { return 0u; }
