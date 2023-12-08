@@ -1,10 +1,13 @@
 
 #include <fstream>
+#include <map>
 #include <algorithm>
 #include <iostream>
 
 #include "ssgl.h"
 #include "gl_timing.h"
+
+glsl_global const int64_t steps = 269, steps2 = steps*steps, steps3 = steps2*steps;
 
 int main() {
     
@@ -12,92 +15,135 @@ int main() {
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&cpu_start);
 
-    std::ifstream file("input.txt");
+    std::ifstream file("input8.txt");
     std::vector<std::string> lines;
     for (std::string line; std::getline(file, line); lines.push_back(line));
-    
-    auto extract = [](std::string& s) {
-        auto len = s.find(' ');
-        if(len == std::string::npos) len = s.length();
-        auto result = s.substr(0, len);
-        s = s.substr(std::min(s.length(), len+1));
-        return std::stoll(result);
+
+    std::vector<uint32_t> direction((lines[0].size()+31)/32, 0u);
+    for (int i = 0; i < lines[0].size(); ++i)
+        direction[i>>5] |= int(lines[0][i] == 'R') << (i & 31);
+
+    std::map<std::string, std::pair<std::string, std::string>> map;
+    for (int i = 2; i < lines.size(); ++i)
+        map[lines[i].substr(0, 3)] = { lines[i].substr(7, 3), lines[i].substr(12, 3) };
+
+    std::map<std::string, uint16_t> indices;
+    for (auto& [key, value] : map)
+        indices[key] = indices.size();
+
+    std::vector<uint32_t> step_map(indices.size());
+    for (auto& [key, value] : map)
+        step_map[indices[key]] = indices[value.first] | (indices[value.second] << 16);
+
+    auto iterate_map = [&](std::vector<uint32_t> step_map) {
+        std::vector<uint32_t> new_map;
+        for (int j = 0; j < step_map.size(); ++j) {
+            uint16_t node = j;
+            for (int i = 0; i < lines[0].size(); ++i)
+                node = (step_map[node] >> (16 * ((direction[i >> 5] >> (i & 31)) & 1))) & 0xFFFFu;
+            new_map.push_back(node | (node << 16));
+        }
+        return new_map;
     };
 
-    std::vector<i64vec2> seeds;
-    lines[0] = lines[0].substr(7);
-    while (lines[0].length())
-        seeds.push_back({ extract(lines[0]), extract(lines[0]) });
-    
-    std::vector<i64vec4> ranges;
-    for (int i = 1; i < lines.size(); ++i)
-        if (lines[i].length() == 0)
-            for(auto& r : ranges) { if(r.w == -1) r.w = ranges.size(); }
-        else if (!std::isalpha(lines[i][0]))
-            ranges.push_back({ extract(lines[i]), extract(lines[i]), extract(lines[i]), -1 });
+    auto latest = step_map, full_map = step_map;
+    for (int i = 0; i < 6; ++i) {
+        latest = iterate_map(latest);
+        if(i>=2)
+            full_map.insert(full_map.end(), latest.begin(), latest.end());
+    }
+    std::vector<uint32_t> starts;
+    for (auto& [key, value] : indices)
+        if (key[2] == 'A')
+            starts.push_back(value);
 
+    std::vector<uint32_t> goals((750+31)/32, 0u);
+    for (auto& [key, value] : indices)
+        goals[value >> 5] |= key[2] == 'Z' ? (1 << (value & 31)) : 0u;
+    
     std::vector<int64_t> result = {std::numeric_limits<int64_t>::max()};
 
-    OpenGL context(1280, 720, "AoC 2023 Day 5 part 2", false, false);
+    OpenGL context(1280, 720, "AoC 2023 Day 8 part 2", false, false);
+
     
-    Buffer seed_buffer(seeds), range_buffer(ranges), result_buffer(result);
+    Buffer dir_buffer(direction), map_buffer(full_map), goal_buffer(goals), start_buffer(starts), result_buffer(result);
 
-    auto run = [&] {
-        glsl_extension(GL_NV_shader_atomic_int64, require);
-        layout (local_size_x = 1024) in;
-        buffer bind_block(seed_buffer) { dynamic_array(i64vec2, seeds); };
-        buffer bind_block(range_buffer) { dynamic_array(i64vec4, ranges); };
-        buffer bind_block(result_buffer) { int64_t result; };
+    uint groups = 120;
+    for (int64_t start_index = 0; result[0] == std::numeric_limits<int64_t>::max(); start_index += groups * 1024 * steps3) {
+        auto run = [&] {
+            glsl_extension(GL_NV_shader_atomic_int64, require);
+            layout(local_size_x = 1024) in;
+            uniform int64_t bind(start_index);
+            buffer bind_block(dir_buffer) { dynamic_array(uint, global_dirs); };
+            buffer bind_block(map_buffer) { dynamic_array(uint, global_map); };
+            buffer bind_block(goal_buffer) { dynamic_array(uint, global_goals); };
+            buffer bind_block(start_buffer) { dynamic_array(uint, starts); };
+            buffer bind_block(result_buffer) { int64_t result; };
 
-        shared i64vec2 sseeds[10];
-        shared i64vec4 sranges[233];
+            shared uint dirs[9], goals[24];
+            shared uint map[750 * 4];
 
-        void glsl_main() {
-            uint lid = gl_LocalInvocationIndex;
-            if (lid < 10) sseeds[lid] = seeds[lid];
-            if (lid < 233) sranges[lid] = ranges[lid];
-            barrier();
+            void glsl_main() {
+                uint lid = gl_LocalInvocationIndex;
+                if (lid < 9)
+                    dirs[lid] = global_dirs[lid];
+                if (lid < 24)
+                    goals[lid] = global_goals[lid];
 
-            int64_t smallest = result, threads = int64_t(gl_NumWorkGroups.x * gl_WorkGroupSize.x);
-            for (int64_t id = int64_t(gl_GlobalInvocationID.x); ; id += threads) {
-                int64_t seed = id;
-                for (int k = 0; k < seeds.length(); ++k) {
-                    if (seed < sseeds[k].y) {
-                        seed += sseeds[k].x;
-                        break;
+                for (uint i = lid; i < 750 * 4; i += gl_WorkGroupSize.x)
+                    map[i] = global_map[i];
+                barrier();
+
+                uint start_nodes[6];
+                for (int i = 0; i < 6; ++i) start_nodes[i] = starts[i];
+
+                int64_t threads = int64_t(gl_NumWorkGroups.x * gl_WorkGroupSize.x);
+                int64_t id = int64_t(gl_GlobalInvocationID.x)*steps3 + start_index;
+                uint nodes[6];
+                for (int i = 0; i < 6; ++i) nodes[i] = start_nodes[i];
+                int64_t k = 0;
+                while (k < id) {
+                    uint offset = 0;
+                    if (k + steps3 * steps2 < id) {
+                        k += steps3 * steps2;
+                        offset = 750 * 3;
                     }
-                    else seed -= sseeds[k].y;
-                    if(k+1 == seeds.length())
-                        seed = -1;
-                }
-                if(seed < 0) break;
-
-                for (int k = 0; k < ranges.length() && k>=0;) {
-                    i64vec4 r = sranges[k];
-                    if (seed >= r.y && seed < r.y + r.z) {
-                        seed = r.x + seed - r.y;
-                        k = int(r.w);
+                    else if (k + steps3 * steps < id) {
+                        k += steps3 * steps;
+                        offset = 750 * 2;
                     }
-                    else ++k;
+                    else {
+                        k += steps3;
+                        offset = 750;
+                    }
+                    for (int i = 0; i < 6; ++i)
+                        nodes[i] = map[offset + nodes[i]] & 0xffffu;
                 }
-                smallest = min(smallest, seed);
+                uint step = 0;
+                while (k < id + steps3) {
+                    bool found = true;
+                    for (int i = 0; i < 6; ++i)
+                        found = found && (((goals[nodes[i] >> 5] >> (nodes[i] & 31)) & 1) == 1);
+                    if (found) atomicMin(result, k);
+                    uint dir = (16 * ((dirs[step >> 5] >> (step & 31)) & 1));
+                    for (int i = 0; i < 6; ++i)
+                        nodes[i] = (map[nodes[i]] >> dir) & 0xFFFFu;
+                    k++;
+                    step++;
+                    if (step == uint(steps)) step = 0;
+                }
             }
+            };
 
-            atomicMin(result, smallest);
-        }
-    };
-    
-    
-    useShader(run());
-    TimeStamp start;
-    glDispatchCompute(400, 1, 1);
-    TimeStamp end;
+        std::cout << "scanning from " << start_index << "\n";
 
-    result = result_buffer;
+        useShader(run());
+        glDispatchCompute(80, 1, 1);
 
+        result = result_buffer;
+    }
     std::cout << result[0] << "\n";
     QueryPerformanceCounter(&cpu_end);
-    std::cout << "kernel in " << gpuTime(start, end) << "ms\n";
     std::cout << "solved in " << (double(cpu_end.QuadPart - cpu_start.QuadPart)/double(freq.QuadPart)*1000.) << "ms\n";
 
     return 0;

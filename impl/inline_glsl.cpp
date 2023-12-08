@@ -678,6 +678,10 @@ namespace inline_glsl {
         //printf("set uniform uint '%s' to %ui\n", store.name, store.item);
         glUniform1ui64(store.location, store.item);
     }
+    void Arg::bind(ShaderState& shader_state, ArgStore<int64_t>& store) {
+        //printf("set uniform uint '%s' to %ui\n", store.name, store.item);
+        glUniform1i64(store.location, store.item);
+    }
     void Arg::bind(ShaderState& shader_state, ArgStore<vec2>& store) {
         //printf("set uniform vec2 '%s'\n", store.name);
         glUniform2fv(store.location, 1, store.item.data);
