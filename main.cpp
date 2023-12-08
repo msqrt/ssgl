@@ -87,14 +87,17 @@ int main() {
         }
     };
     
+    
     useShader(run());
-    glDispatchCompute(200, 1, 1);
+    TimeStamp start;
+    glDispatchCompute(400, 1, 1);
+    TimeStamp end;
 
     result = result_buffer;
 
     std::cout << result[0] << "\n";
     QueryPerformanceCounter(&cpu_end);
-
+    std::cout << "kernel in " << gpuTime(start, end) << "ms\n";
     std::cout << "solved in " << (double(cpu_end.QuadPart - cpu_start.QuadPart)/double(freq.QuadPart)*1000.) << "ms\n";
 
     return 0;
