@@ -1,78 +1,63 @@
 
-#include <iostream>
 #include <fstream>
+#include <algorithm>
+#include <iostream>
 
 #include "ssgl.h"
 #include "gl_timing.h"
 
+glsl_global const uint64_t per_iter = uint64_t(10000) * uint64_t(100000);
+
 int main() {
-    LARGE_INTEGER cpu_start, window_done, cpu_end, freq;
+
+    LARGE_INTEGER cpu_start, cpu_end, freq;
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&cpu_start);
 
-    OpenGL context(1280, 720, "advent of code 2024 day 6 part 2", false, false);
+    OpenGL context(1280, 720, "AoC 2024 Day 17 Part 2", false, false);
 
-    QueryPerformanceCounter(&window_done);
-    
-    std::ifstream file("input6.txt");
-    std::vector<std::string> lines;
-    for (std::string line; std::getline(file, line); lines.push_back(line));
-    
-    ivec2 start_pos;
-    std::vector<uint> map(lines.size() * 5, 0);
-    for (int i = 0; i < lines.size(); ++i)
-        for (int j = 0; j < lines[i].size(); ++j) {
-            if (lines[i][j] == '^')
-                start_pos = ivec2(i, j);
-            else if (lines[i][j] == '#')
-                map[i * 5 + (j >> 5)] |= 1 << (j & 31);
-        }
-
-
-    std::vector<uint> result = { 0 };
+    std::vector<uint64_t> result = { uint64_t(-1) };
     Buffer result_buffer(result);
-    Buffer map_buffer(map);
+    uint64_t offset = 0, end = per_iter, program = 235006351742932;
 
-    TimeStamp start;
+    do {
 
-    auto comp = [&] {
-        layout(local_size_x = 128) in;
-        uniform ivec2 bind(start_pos);
-        buffer bind_block(result_buffer) { uint result; };
-        buffer bind_block(map_buffer) { dynamic_array(uint, m); };
-        shared uint map[130 * 5];
-        void glsl_main() {
-            for (int i = int(gl_LocalInvocationID.x); i < 130 * 5; i += int(gl_WorkGroupSize.x))
-                map[i] = m[i];
-            barrier();
-            uint loop = 0;
-            for (int problem = int(gl_GlobalInvocationID.x); problem < 130 * 130; problem += int(gl_WorkGroupSize.x * gl_NumWorkGroups.x)) {
-                ivec2 stone = ivec2(problem % 130, problem / 130);
-                if ((map[stone.x * 5 + (stone.y >> 5)] & (1 << (stone.y & 31))) != 0 || stone == start_pos)
-                    continue;
-                ivec2 pos = start_pos, dir = ivec2(-1, 0);
-                for (int i = 0; i < 130 * 130 * 4; i++) {
-                    ivec2 updated = pos + dir;
-                    if (updated.x < 0 || updated.x >= 130 || updated.y < 0 || updated.y >= 130) break;
-                    if ((map[updated.x * 5 + (updated.y >> 5)] & (1 << (updated.y & 31))) != 0 || updated == stone)
-                        dir = ivec2(dir.y, -dir.x);
-                    else
-                        pos = updated;
-                    if (i + 1 == 130 * 130 * 4) loop++;
+        auto run = [&] {
+            glsl_extension(GL_NV_shader_atomic_int64, require);
+            layout(local_size_x = 512) in;
+            uniform uint64_t bind(offset, end, program);
+            buffer bind_block(result_buffer) { uint64_t result; };
+
+            void glsl_main() {
+                for (uint64_t i = gl_GlobalInvocationID.x + offset; i < end; i += gl_NumWorkGroups.x * gl_WorkGroupSize.x) {
+                    uint64_t A = i;
+                    uint64_t target = program;
+                    while (true) {
+                        uint B = (uint(A) & 7u) ^ 5u;
+                        B = (uint(A) >> B) ^ B;
+                        if (((B ^ target) & 7u) != 0) break;
+                        A >>= 3u;
+                        target >>= 3u;
+                        if (target == 0u) atomicMin(result, i);
+                    }
                 }
             }
-            atomicAdd(result, loop);
-        }
-    };
-    useShader(comp());
-    glDispatchCompute(256, 1, 1);
+            };
 
-    TimeStamp end;
+        useShader(run());
+        TimeStamp before;
+        glDispatchCompute(1111, 1, 1);
+        TimeStamp after;
 
-    result = result_buffer;
+        result = result_buffer;
+        offset += per_iter;
+        end += per_iter;
+    } while (result[0] == uint64_t(-1));
+
     QueryPerformanceCounter(&cpu_end);
+
     std::cout << result[0] << "\n";
-    std::cout << "full time " << double(cpu_end.QuadPart - cpu_start.QuadPart) / double(freq.QuadPart)*1000. << "ms\n - device creation " << double(window_done.QuadPart - cpu_start.QuadPart) / double(freq.QuadPart)*1000. << "ms\n - simulation time " << (end - start) << "ms\n";
+    std::cout << "solved in " << (double(cpu_end.QuadPart - cpu_start.QuadPart) / double(freq.QuadPart)) << "s\n";
 
     return 0;
 }
